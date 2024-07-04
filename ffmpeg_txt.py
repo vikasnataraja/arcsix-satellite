@@ -14,13 +14,14 @@ def dt2fname(dt, satellite):
     return dt_str
 
 
+no_video_dirs = ['ice_path', 'water_path', 'optical_thickness', 'cloud_phase', 'cloud_top_height_temperature']
 if __name__ == "__main__":
 
     parser = ArgumentParser(prog='ffmpeg_txt')
     parser.add_argument('--fdir', type=str, metavar='',
                         help='Top-level source directory\n')
-    parser.add_argument('--frame_rate', type=float, metavar='', default=1,
-                        help='Frame rate\n')
+    parser.add_argument('--frame_rate', type=float, metavar='', default=0.5,
+                        help='Reciprocal of frame rate i.e., --frame rate=0.5 is 2 frames per second.\n')
     args = parser.parse_args()
 
     # fdir = sys.argv[1]
@@ -29,6 +30,9 @@ if __name__ == "__main__":
     subs = sorted([f for f in os.listdir(args.fdir) if os.path.isdir(os.path.join(args.fdir, f))])
 
     for sub in subs:
+        if sub in no_video_dirs:
+            print("Message [ffmpeg_txt]: Skipping {}...".format(sub))
+            continue
         outpath = os.path.join(args.fdir, sub, 'create_video_metadata.txt')
         fpngs = [png for png in os.listdir(os.path.join(args.fdir, sub)) if png.endswith('.png')]
 

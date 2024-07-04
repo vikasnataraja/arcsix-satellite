@@ -26,8 +26,63 @@ MODIS_L1B_HKM_1KM_BANDS = {
                         5: 1240,
                         6: 1640,
                         7: 2130,
-                        26: 1375
+                        26: 1380,
+                        8: 412,
+                        9: 443,
+                        10: 488,
+                        11: 531,
+                        12: 551,
+                        13: 667,
+                        14: 678,
+                        15: 748,
+                        16: 869,
+                        17: 905,
+                        18: 936,
+                        19: 940,
+                        20: 3750,
+                        21: 3964,
+                        22: 3964,
+                        23: 4050,
+                        24: 4465,
+                        25: 4515,
+                        27: 6715,
+                        28: 7235,
+                        29: 8550,
+                        30: 9730,
+                        31: 11030,
+                        32: 12020,
+                        33: 13335,
+                        34: 13635,
+                        35: 13935,
+                        36: 14235
                       }
+
+MODIS_L1B_HKM_1KM_BANDS_DEFAULT = {1: 650,
+                                   4: 555,
+                                   3: 470
+                                    }
+# MODIS_L1B_HKM_1KM_BANDS = {
+#                         1: 650,
+#                         2: 860,
+#                         3: 470,
+#                         4: 555,
+#                         5: 1240,
+#                         6: 1640,
+#                         7: 2130,
+#                         8: 415,
+#                         9: 443,
+#                         10: 488,
+#                         11: 531,
+#                         12: 551,
+#                         13: 667,
+#                         14: 678,
+#                         15: 748,
+#                         16: 869,
+#                         17: 905,
+#                         18: 936,
+#                         19: 940,
+#                         26: 1375
+#                       }
 
 
 VIIRS_ALL_BANDS = {
@@ -50,9 +105,9 @@ VIIRS_ALL_BANDS = {
                     'M12': 3700,
                     'M13': 4050,
                     'M14': 8550,
-                    'M15': 12013
+                    'M15': 10763,
+                    'M16': 12013
                     }
-
 
 VIIRS_L1B_MOD_BANDS = {
                     'M01': 415,
@@ -63,17 +118,44 @@ VIIRS_L1B_MOD_BANDS = {
                     'M06': 746,
                     'M07': 865,
                     'M08': 1240,
+                    'M09': 1378,
                     'M10': 1610,
-                    'M11': 2250
+                    'M11': 2250,
+                    'M12': 3700,
+                    'M13': 4050,
+                    'M14': 8550,
+                    'M15': 10763,
+                    'M16': 12013
                     }
 
 VIIRS_L1B_IMG_BANDS = {
                     'I01': 640,
                     'I02': 865,
-                    'I03': 1610
+                    'I03': 1610,
+                    'I04': 3740,
+                    'I05': 11450
                     }
 
 
+VIIRS_L1B_MOD_EMISSIVE_BANDS = {'M12': 3700,
+                                'M13': 4050,
+                                'M14': 8550,
+                                'M15': 10763,
+                                'M16': 12013
+                                }
+
+VIIRS_L1B_IMG_EMISSIVE_BANDS = {'I04': 3740,
+                                'I05': 11450
+                                }
+
+VIIRS_L1B_ALL_EMISSIVE_BANDS = {'M12': 3700,
+                                'M13': 4050,
+                                'M14': 8550,
+                                'M15': 10763,
+                                'M16': 12013,
+                                'I04': 3740,
+                                'I05': 11450
+                                }
 
 
 def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
@@ -107,11 +189,11 @@ def grid_by_extent(lon, lat, data, extent=None, NxNy=None, method='nearest'):
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
     else:
         Nx, Ny = NxNy
@@ -208,11 +290,11 @@ def grid_by_lonlat(lon, lat, data, lon_1d=None, lat_1d=None, method='nearest', f
         N0 = np.sqrt(lon.size/xy)
 
         Nx = int(N0*(extent[1]-extent[0]))
-        if Nx%2 == 1:
+        if Nx % 2 == 1:
             Nx += 1
 
         Ny = int(N0*(extent[3]-extent[2]))
-        if Ny%2 == 1:
+        if Ny % 2 == 1:
             Ny += 1
 
         lon_1d0 = np.linspace(extent[0], extent[1], Nx+1)
@@ -257,24 +339,6 @@ def haversine(lon1, lon2, lat1, lat2):
     r = EARTH_RADIUS * 1e3 # Radius of earth in meters
     return c * r
 
-
-# def calc_lonlat_arr(extent, width, height, resolution):
-#     west, east, south, north = extent
-#     lon2_arr = np.zeros((width))
-#     lat2_arr = np.zeros((height))
-#     lon1, lat1 = west, south
-#     for i in range(width):
-#         lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=90, distance=resolution)
-#         lon2_arr[i] = lon2
-#         lon1, lat1 = lon2, lat2
-
-#     lon1, lat1 = west, south
-#     for j in range(height):
-#         lon2, lat2 = get_lon2lat2(lon1, lat1, bearing=0, distance=resolution)
-#         lat2_arr[j] = lat2
-#         lon1, lat1 = lon2, lat2
-
-#     return lon2_arr, lat2_arr
 
 def calc_lonlat_arr(west, south, width, height, resolution):
     # west, east, south, north = extent
@@ -328,11 +392,11 @@ def calc_bearing(lat1, lat2, delta_lon, reference="north-south"):
 def get_lon2lat2(lon1, lat1, bearing, distance):
     """
     Get lat/lon of the destination point given the initial point,
-    bearing, and the distance between the points.
+    bearing, and the great-circle distance between the points.
     Args:
         - lon1: float, longitude of the first point in degrees
         - lat1: float, latitude of the first point in degrees
-        - bearing: float, angle of trajectory.
+        - bearing: float, bearing angle of trajectory.
                    For instance, 0 is true north, 90 is east, 180 is south, 270 is west.
         - distance: float, distance between the points in meters
     Returns:
@@ -438,7 +502,6 @@ def upscale_modis_lonlat(lon_in, lat_in, scale=5, extra_grid=True):
     offsets = offsets_dict[scale]
 
     lon_in[lon_in>180.0] -= 360.0
-
     # +
     # find center lon, lat
     proj_lonlat = ccrs.PlateCarree()
@@ -479,10 +542,18 @@ def upscale_modis_lonlat(lon_in, lat_in, scale=5, extra_grid=True):
 
     YY = np.arange(y)
 
-    f_x = interpolate.interp2d(XX_in, YY_in, xy_in[:, :, 0], kind='linear', fill_value=None)
-    f_y = interpolate.interp2d(XX_in, YY_in, xy_in[:, :, 1], kind='linear', fill_value=None)
+    # Deprecated since Scipy v1.12
+    # f_x = interpolate.interp2d(XX_in, YY_in, xy_in[:, :, 0], kind='linear', fill_value=None)
+    # f_y = interpolate.interp2d(XX_in, YY_in, xy_in[:, :, 1], kind='linear', fill_value=None)
 
-    lonlat = proj_lonlat.transform_points(proj_xy, f_x(XX, YY), f_y(XX, YY))[:, :, [0, 1]]
+    XX_grid, YY_grid = np.meshgrid(XX, YY, indexing='ij')
+
+    # note that RegularGridInterpolator requires transposed data
+    f_x = interpolate.RegularGridInterpolator((XX_in, YY_in), xy_in[:, :, 0].T, method='linear', fill_value=None, bounds_error=False)
+    f_y = interpolate.RegularGridInterpolator((XX_in, YY_in), xy_in[:, :, 1].T, method='linear', fill_value=None, bounds_error=False)
+
+    # reverse the transpose to get back original form
+    lonlat = proj_lonlat.transform_points(proj_xy, f_x((XX_grid, YY_grid)).T, f_y((XX_grid, YY_grid)).T)[:, :, [0, 1]]
 
     return lonlat[:, :, 0], lonlat[:, :, 1]
 
@@ -523,6 +594,172 @@ def get_data_nc(nc_dset, replace_fill_value=np.nan):
 # reader for MODIS (Moderate Resolution Imaging Spectroradiometer)
 #/-----------------------------------------------------------------------------\
 
+class modis_03:
+
+    """
+    Read MODIS 03 geolocation data
+
+    Input:
+        fnames=   : keyword argument, default=None, Python list of the file path of the original HDF4 file
+        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
+        vnames=   : keyword argument, default=[], additional variable names to be read in to self.data
+        overwrite=: keyword argument, default=False, whether to overwrite or not
+        verbose=  : keyword argument, default=False, verbose tag
+
+    Output:
+        self.data
+                ['lon']
+                ['lat']
+                ['sza']
+                ['saa']
+                ['vza']
+                ['vaa']
+    """
+
+
+    ID = 'MODIS 03 Geolocation Product'
+
+
+    def __init__(self, \
+                 fnames    = None,  \
+                 extent    = None,  \
+                 vnames    = [],    \
+                 verbose   = False, \
+                 keep_dims = False):
+
+        self.fnames     = fnames      # file name of the pickle file
+        self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
+        self.verbose    = verbose     # verbose tag
+        self.keep_dims  = keep_dims   # flag; if false -> convert to 1D; true -> retain 2D granule data
+
+        for fname in self.fnames:
+
+            self.read(fname)
+
+            if len(vnames) > 0:
+                self.read_vars(fname, vnames=vnames)
+
+
+    def read(self, fname):
+
+        """
+        Read solar and sensor angles
+
+        self.data
+            ['lon']
+            ['lat']
+            ['sza']
+            ['saa']
+            ['vza']
+            ['vaa']
+
+        self.logic
+        """
+
+        try:
+            from pyhdf.SD import SD, SDC
+        except ImportError:
+            msg = 'Warning [modis_03]: To use \'modis_03\', \'pyhdf\' needs to be installed.'
+            raise ImportError(msg)
+
+        f     = SD(fname, SDC.READ)
+
+        # lon lat
+        lat0       = f.select('Latitude')
+        lon0       = f.select('Longitude')
+
+        sza0       = f.select('SolarZenith')
+        saa0       = f.select('SolarAzimuth')
+        vza0       = f.select('SensorZenith')
+        vaa0       = f.select('SensorAzimuth')
+
+
+        # 1. If region (extent=) is specified, filter data within the specified region
+        # 2. If region (extent=) is not specified, filter invalid data
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        lon = lon0[:]
+        lat = lat0[:]
+
+        if self.extent is None:
+            lon_range = [-180.0, 180.0]
+            lat_range = [-90.0 , 90.0]
+        else:
+            lon_range = [self.extent[0], self.extent[1]]
+            lat_range = [self.extent[2], self.extent[3]]
+
+        logic     = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
+        if not self.keep_dims:
+            lon       = lon[logic]
+            lat       = lat[logic]
+        # -------------------------------------------------------------------------------------------------
+
+
+        # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
+        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        sza = get_data_h4(sza0)
+        saa = get_data_h4(saa0)
+        vza = get_data_h4(vza0)
+        vaa = get_data_h4(vaa0)
+
+        if not self.keep_dims:
+            sza = sza[logic]
+            saa = saa[logic]
+            vza = vza[logic]
+            vaa = vaa[logic]
+
+        f.end()
+        # -------------------------------------------------------------------------------------------------
+
+        if hasattr(self, 'data'):
+
+            self.logic[fname] = {'1km':logic}
+
+            self.data['lon']   = dict(name='Longitude'                 , data=np.hstack((self.data['lon']['data'], lon    )), units='degrees')
+            self.data['lat']   = dict(name='Latitude'                  , data=np.hstack((self.data['lat']['data'], lat    )), units='degrees')
+            self.data['sza']   = dict(name='Solar Zenith Angle'        , data=np.hstack((self.data['sza']['data'], sza    )), units='degrees')
+            self.data['saa']   = dict(name='Solar Azimuth Angle'       , data=np.hstack((self.data['saa']['data'], saa    )), units='degrees')
+            self.data['vza']   = dict(name='Sensor Zenith Angle'       , data=np.hstack((self.data['vza']['data'], vza    )), units='degrees')
+            self.data['vaa']   = dict(name='Sensor Azimuth Angle'      , data=np.hstack((self.data['vaa']['data'], vaa    )), units='degrees')
+
+        else:
+            self.logic = {}
+            self.logic[fname] = {'1km': logic}
+
+            self.data  = {}
+            self.data['lon']   = dict(name='Longitude'                 , data=lon    , units='degrees')
+            self.data['lat']   = dict(name='Latitude'                  , data=lat    , units='degrees')
+            self.data['sza']   = dict(name='Solar Zenith Angle'        , data=sza    , units='degrees')
+            self.data['saa']   = dict(name='Solar Azimuth Angle'       , data=saa    , units='degrees')
+            self.data['vza']   = dict(name='Sensor Zenith Angle'       , data=vza    , units='degrees')
+            self.data['vaa']   = dict(name='Sensor Azimuth Angle'      , data=vaa    , units='degrees')
+
+
+    def read_vars(self, fname, vnames=[]):
+
+        try:
+            from pyhdf.SD import SD, SDC
+        except ImportError:
+            msg = 'Warning [modis_03]: To use \'modis_03\', \'pyhdf\' needs to be installed.'
+            raise ImportError(msg)
+
+        logic = self.logic[fname]['1km']
+
+        f     = SD(fname, SDC.READ)
+
+        for vname in vnames:
+
+            data0 = f.select(vname)
+            data  = get_data_h4(data0)[logic]
+            if vname.lower() in self.data.keys():
+                self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.attributes()['units'])
+            else:
+                self.data[vname.lower()] = dict(name=vname, data=data, units=data0.attributes()['units'])
+
+        f.end()
+
+
+
 class modis_l1b:
 
     """
@@ -540,8 +777,6 @@ class modis_l1b:
                 ['wvl']
                 ['rad']
                 ['ref']
-                ['cnt']
-                ['uct']
     """
 
 
@@ -553,13 +788,15 @@ class modis_l1b:
                  f03       = None, \
                  extent    = None, \
                  bands     = None, \
-                 verbose   = False):
+                 verbose   = False,\
+                 keep_dims = False):
 
         self.fnames     = fnames      # Python list of the file path of the original HDF4 files
         self.f03        = f03         # geolocation class object created using the `modis_03` reader
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.bands      = bands       # Python list of bands that need to be extracted
         self.verbose    = verbose     # verbose tag
+        self.keep_dims  = keep_dims   # flag; if false -> convert to 1D; true -> retain 2D/3D data
 
 
         filename = os.path.basename(fnames[0]).lower()
@@ -576,7 +813,7 @@ class modis_l1b:
         elif 'hkm' in filename:
             self.resolution = 0.5
             if bands is None:
-                self.bands = list(MODIS_L1B_HKM_1KM_BANDS.keys())
+                self.bands = list(MODIS_L1B_HKM_1KM_BANDS_DEFAULT.keys())
 
             elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_1KM_BANDS.keys())
@@ -585,7 +822,7 @@ class modis_l1b:
         elif '1km' in filename:
             self.resolution = 1.0
             if bands is None:
-                self.bands = list(MODIS_L1B_HKM_1KM_BANDS.keys())
+                self.bands = list(MODIS_L1B_HKM_1KM_BANDS_DEFAULT.keys())
 
             elif (bands is not None) and not (set(bands).issubset(set(MODIS_L1B_HKM_1KM_BANDS.keys()))):
                 msg = 'Error [modis_l1b]: Bands must be one or more of %s' % list(MODIS_L1B_HKM_1KM_BANDS.keys())
@@ -603,14 +840,25 @@ class modis_l1b:
         rad_sca = hdf_dset_250.attributes()['radiance_scales']          + hdf_dset_500.attributes()['radiance_scales']
         ref_off = hdf_dset_250.attributes()['reflectance_offsets']      + hdf_dset_500.attributes()['reflectance_offsets']
         ref_sca = hdf_dset_250.attributes()['reflectance_scales']       + hdf_dset_500.attributes()['reflectance_scales']
-        cnt_off = hdf_dset_250.attributes()['corrected_counts_offsets'] + hdf_dset_500.attributes()['corrected_counts_offsets']
-        cnt_sca = hdf_dset_250.attributes()['corrected_counts_scales']  + hdf_dset_500.attributes()['corrected_counts_scales']
-        return rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca
-
+        return rad_off, rad_sca, ref_off, ref_sca
 
     def _get_250_500_uct(self, hdf_uct_250, hdf_uct_500):
         uct_spc = hdf_uct_250.attributes()['specified_uncertainty'] + hdf_uct_500.attributes()['specified_uncertainty']
         uct_sca = hdf_uct_250.attributes()['scaling_factor']        + hdf_uct_500.attributes()['scaling_factor']
+        return uct_spc, uct_sca
+
+    def _get_250_500_1km_attrs(self, hdf_dset_250, hdf_dset_500, hdf_dset_1km_solar, hdf_dset_1km_emissive):
+        num_emissive_bands = len(hdf_dset_1km_emissive.attributes()['radiance_scales'])
+
+        rad_off = hdf_dset_250.attributes()['radiance_offsets']    + hdf_dset_500.attributes()['radiance_offsets']    + hdf_dset_1km_solar.attributes()['radiance_offsets'] + hdf_dset_1km_emissive.attributes()['radiance_offsets']
+        rad_sca = hdf_dset_250.attributes()['radiance_scales']     + hdf_dset_500.attributes()['radiance_scales']     + hdf_dset_1km_solar.attributes()['radiance_scales'] + hdf_dset_1km_emissive.attributes()['radiance_scales']
+        ref_off = hdf_dset_250.attributes()['reflectance_offsets'] + hdf_dset_500.attributes()['reflectance_offsets'] + hdf_dset_1km_solar.attributes()['reflectance_offsets'] + list(np.full(num_emissive_bands, -99))
+        ref_sca = hdf_dset_250.attributes()['reflectance_scales']  + hdf_dset_500.attributes()['reflectance_scales']  + hdf_dset_1km_solar.attributes()['reflectance_scales'] + list(np.ones(num_emissive_bands))
+        return rad_off, rad_sca, ref_off, ref_sca
+
+    def _get_250_500_1km_uct(self, hdf_uct_250, hdf_uct_500, hdf_uct_1km_solar, hdf_uct_1km_emissive):
+        uct_spc = hdf_uct_250.attributes()['specified_uncertainty'] + hdf_uct_500.attributes()['specified_uncertainty'] + hdf_uct_1km_solar.attributes()['specified_uncertainty'] + hdf_uct_1km_emissive.attributes()['specified_uncertainty']
+        uct_sca = hdf_uct_250.attributes()['scaling_factor']        + hdf_uct_500.attributes()['scaling_factor']        + hdf_uct_1km_solar.attributes()['scaling_factor'] + hdf_uct_1km_emissive.attributes()['scaling_factor']
         return uct_spc, uct_sca
 
 
@@ -624,7 +872,6 @@ class modis_l1b:
                 ['wvl']
                 ['rad']
                 ['ref']
-                ['cnt']
                 ['uct']
         """
 
@@ -647,19 +894,7 @@ class modis_l1b:
 
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=4, extra_grid=False)
             raw0      = f.select('EV_250_RefSB')
-            uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
-            # wvl       = np.array([650, 860], dtype='uint16') # QKM bands
-
-            # if self.extent is None:
-            #     if 'actual_range' in lon0.attributes().keys():
-            #         lon_range = lon0.attributes()['actual_range']
-            #         lat_range = lat0.attributes()['actual_range']
-            #     elif 'valid_range' in lon0.attributes().keys():
-            #         lon_range = lon0.attributes()['valid_range']
-            #         lat_range = lat0.attributes()['valid_range']
-            #     else:
-            #         lon_range = [-180.0, 180.0]
-            #         lat_range = [-90.0 , 90.0]
+            # uct0      = f.select('EV_250_RefSB_Uncert_Indexes')
 
             if self.extent is None:
                 lon_range = [-180.0, 180.0]
@@ -670,8 +905,9 @@ class modis_l1b:
                 lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
             logic     = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
-            lon       = lon[logic]
-            lat       = lat[logic]
+            if not self.keep_dims:
+                lon       = lon[logic]
+                lat       = lat[logic]
 
             # save offsets and scaling factors
             rad_off = raw0.attributes()['radiance_offsets']
@@ -680,11 +916,8 @@ class modis_l1b:
             ref_off = raw0.attributes()['reflectance_offsets']
             ref_sca = raw0.attributes()['reflectance_scales']
 
-            cnt_off = raw0.attributes()['corrected_counts_offsets']
-            cnt_sca = raw0.attributes()['corrected_counts_scales']
-
-            uct_spc = uct0.attributes()['specified_uncertainty']
-            uct_sca = uct0.attributes()['scaling_factor']
+            # uct_spc = uct0.attributes()['specified_uncertainty']
+            # uct_sca = uct0.attributes()['scaling_factor']
             do_region = True
 
         # when resolution equals to 500 m
@@ -699,31 +932,23 @@ class modis_l1b:
 
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=2, extra_grid=False)
             raw0_250  = f.select('EV_250_Aggr500_RefSB')
-            uct0_250  = f.select('EV_250_Aggr500_RefSB_Uncert_Indexes')
+            # uct0_250  = f.select('EV_250_Aggr500_RefSB_Uncert_Indexes')
             raw0_500  = f.select('EV_500_RefSB')
-            uct0_500  = f.select('EV_500_RefSB_Uncert_Indexes')
+            # uct0_500  = f.select('EV_500_RefSB_Uncert_Indexes')
 
             # save offsets and scaling factors (from both QKM and HKM bands)
-            rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca = self._get_250_500_attrs(raw0_250, raw0_500)
-            uct_spc, uct_sca                                     = self._get_250_500_uct(uct0_250, uct0_500)
+            rad_off, rad_sca, ref_off, ref_sca = self._get_250_500_attrs(raw0_250, raw0_500)
+            # uct_spc, uct_sca                   = self._get_250_500_uct(uct0_250, uct0_500)
 
             # combine QKM and HKM bands
             raw0      = np.vstack([raw0_250, raw0_500])
-            uct0      = np.vstack([uct0_250, uct0_500])
+            # uct0      = np.vstack([uct0_250, uct0_500])
 
-            # wvl       = np.array([470, 555, 1240, 1640, 2130], dtype='uint16') # HKM bands
+            # band info
+            band_numbers = f.select('Band_250M')[:] + f.select('Band_500M')[:]
+            band_dict = dict(zip(band_numbers, np.arange(0, band_numbers.size)))
+
             do_region = True
-
-            # if self.extent is None:
-            #     if 'actual_range' in lon0.attributes().keys():
-            #         lon_range = lon0.attributes()['actual_range']
-            #         lat_range = lat0.attributes()['actual_range']
-            #     elif 'valid_range' in lon0.attributes().keys():
-            #         lon_range = lon0.attributes()['valid_range']
-            #         lat_range = lat0.attributes()['valid_range']
-            #     else:
-            #         lon_range = [-180.0, 180.0]
-            #         lat_range = [-90.0 , 90.0]
 
             if self.extent is None:
                 lon_range = [-180.0, 180.0]
@@ -734,25 +959,34 @@ class modis_l1b:
                 lat_range = [self.extent[2] - 0.01, self.extent[3] + 0.01]
 
             logic     = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
-            lon       = lon[logic]
-            lat       = lat[logic]
+            if not self.keep_dims:
+                lon       = lon[logic]
+                lat       = lat[logic]
 
         # when resolution equals to 1000 m
         elif check_equal(self.resolution, 1.0):
             if self.f03 is not None:
-                raw0_250  = f.select('EV_250_Aggr1km_RefSB')
-                uct0_250  = f.select('EV_250_Aggr1km_RefSB_Uncert_Indexes')
-                raw0_500  = f.select('EV_500_Aggr1km_RefSB')
-                uct0_500  = f.select('EV_500_Aggr1km_RefSB_Uncert_Indexes')
+                raw0_250           = f.select('EV_250_Aggr1km_RefSB')
+                # uct0_250           = f.select('EV_250_Aggr1km_RefSB_Uncert_Indexes')
+                raw0_500           = f.select('EV_500_Aggr1km_RefSB')
+                # uct0_500           = f.select('EV_500_Aggr1km_RefSB_Uncert_Indexes')
+                raw0_1km_solar     = f.select('EV_1KM_RefSB')
+                # uct0_1km_solar     = f.select('EV_1KM_RefSB_Uncert_Indexes')
+                raw0_1km_emissive  = f.select('EV_1KM_Emissive')
+                # uct0_1km_emissive  = f.select('EV_1KM_Emissive_Uncert_Indexes')
 
-                # save offsets and scaling factors (from both QKM and HKM bands)
-                rad_off, rad_sca, ref_off, ref_sca, cnt_off, cnt_sca = self._get_250_500_attrs(raw0_250, raw0_500)
-                uct_spc, uct_sca                                     = self._get_250_500_uct(uct0_250, uct0_500)
+                # save offsets and scaling factors (from both QKM and HKM and 1KM solar and emissive bands)
+                rad_off, rad_sca, ref_off, ref_sca = self._get_250_500_1km_attrs(raw0_250, raw0_500, raw0_1km_solar, raw0_1km_emissive)
+                # uct_spc, uct_sca                   = self._get_250_500_1km_uct(uct0_250, uct0_500, uct0_1km_solar, uct0_1km_emissive)
 
-                # combine QKM and HKM bands
-                raw0      = np.vstack([raw0_250, raw0_500])
-                uct0      = np.vstack([uct0_250, uct0_500])
-                # wvl       = np.array([650, 860, 470, 555, 1240, 1640, 2130], dtype='uint16')
+                # combine QKM and HKM and 1KM bands
+                raw0      = np.vstack([raw0_250, raw0_500, raw0_1km_solar, raw0_1km_emissive])
+                # uct0      = np.vstack([uct0_250, uct0_500, uct0_1km_solar, uct0_1km_emissive])
+
+                # band info
+                band_numbers = list(f.select('Band_250M')[:]) + list(f.select('Band_500M')[:]) + list(f.select('Band_1KM_RefSB')[:]) + list(f.select('Band_1KM_Emissive')[:])
+                band_dict = dict(zip(band_numbers, np.arange(0, len(band_numbers))))
+
                 do_region = False
                 lon       = self.f03.data['lon']['data']
                 lat       = self.f03.data['lat']['data']
@@ -766,27 +1000,31 @@ class modis_l1b:
 
         # Calculate 1. radiance, 2. reflectance, 3. corrected counts from the raw data
         #/----------------------------------------------------------------------------\#
-        raw = raw0[:][:, logic]
-        rad = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
-        ref = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
-        cnt = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+        wvl = np.zeros(len(self.bands), dtype='int16')
 
-        # Calculate uncertainty
-        uct     = uct0[:][:, logic]
-        uct_pct = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+        if self.keep_dims:
+            raw = raw0[:]
+            rad = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float64)
+            ref = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float64)
+            # Calculate uncertainty
+            # uct     = uct0[:]
+            # uct_pct = np.zeros((len(self.bands), raw.shape[1], raw.shape[2]), dtype=np.float64)
+        else:
+            raw = raw0[:][:, logic]
+            rad = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+            ref = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
+            # Calculate uncertainty
+            # uct     = uct0[:][:, logic]
+            # uct_pct = np.zeros((len(self.bands), raw.shape[1]), dtype=np.float64)
 
-        wvl = np.zeros(len(self.bands), dtype='uint16')
 
-        band_counter = 0
-        for i in self.bands:
-            band_idx                     = i - 1 # band indexing in Python starts from 0
-            rad0                         = (raw[band_idx, ...] - rad_off[band_idx]) * rad_sca[band_idx]
-            rad[band_counter, ...]       = rad0/1000.0 # convert to W/m^2/nm/sr
-            ref[band_counter, ...]       = (raw[band_idx, ...] - ref_off[band_idx]) * ref_sca[band_idx]
-            cnt[band_counter, ...]       = (raw[band_idx, ...] - cnt_off[band_idx]) * cnt_sca[band_idx]
-            uct_pct[band_counter, ...]   = uct_spc[band_idx] * np.exp(uct[band_idx] / uct_sca[band_idx]) # convert to percentage
-            wvl[band_counter]            = MODIS_L1B_HKM_1KM_BANDS[self.bands[band_counter]]
-            band_counter                += 1
+        for band_counter, i in enumerate(self.bands):
+            band_idx                = band_dict[i]
+            rad0                    = (raw[band_idx] - rad_off[band_idx]) * rad_sca[band_idx]
+            rad[band_counter]       = rad0/1000.0 # convert to W/m^2/nm/sr
+            ref[band_counter]       = (raw[band_idx] - ref_off[band_idx]) * ref_sca[band_idx]
+            # uct_pct[band_counter]   = uct_spc[band_idx] * np.exp(uct[band_idx] / uct_sca[band_idx]) # convert to percentage
+            wvl[band_counter]       = MODIS_L1B_HKM_1KM_BANDS[i]
 
         f.end()
         # -------------------------------------------------------------------------------------------------
@@ -800,8 +1038,7 @@ class modis_l1b:
 
             self.data['rad'] = dict(name='Radiance'                , data=np.hstack((self.data['rad']['data'], rad)),     units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=np.hstack((self.data['ref']['data'], ref)),     units='N/A')
-            self.data['cnt'] = dict(name='Corrected Counts'        , data=np.hstack((self.data['cnt']['data'], cnt)),     units='N/A')
-            self.data['uct'] = dict(name='Uncertainty Percentage'  , data=np.hstack((self.data['uct']['data'], uct_pct)), units='N/A')
+            # self.data['uct'] = dict(name='Uncertainty Percentage'  , data=np.hstack((self.data['uct']['data'], uct_pct)), units='N/A')
 
         else:
 
@@ -811,8 +1048,7 @@ class modis_l1b:
             self.data['wvl'] = dict(name='Wavelength'              , data=wvl,     units='nm')
             self.data['rad'] = dict(name='Radiance'                , data=rad,     units='W/m^2/nm/sr')
             self.data['ref'] = dict(name='Reflectance (x cos(SZA))', data=ref,     units='N/A')
-            self.data['cnt'] = dict(name='Corrected Counts'        , data=cnt,     units='N/A')
-            self.data['uct'] = dict(name='Uncertainty Percentage'  , data=uct_pct, units='N/A')
+            # self.data['uct'] = dict(name='Uncertainty Percentage'  , data=uct_pct, units='N/A')
 
 
     def save_h5(self, fname):
@@ -850,12 +1086,14 @@ class modis_l2:
                  fnames    = None,  \
                  f03       = None,  \
                  extent    = None,  \
+                 keep_dims = False, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the pickle file
         self.f03        = f03
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
+        self.keep_dims  = keep_dims   # flag; if true, gets the full 2D granule (essentially ignoring extent)
 
         for fname in self.fnames:
 
@@ -918,12 +1156,13 @@ class modis_l2:
 
         # other important variables
         ctp         = f.select('Cloud_Phase_Optical_Properties')
+        ctp_ir      = f.select('Cloud_Phase_Infrared_1km')
 #         cld_layer   = f.select('Cloud_Multi_Layer_Flag')
 
         # uncertainties
-        cot_uct     = f.select('Cloud_Optical_Thickness_Uncertainty')
-        cer_uct     = f.select('Cloud_Effective_Radius_Uncertainty')
-        cwp_uct     = f.select('Cloud_Water_Path_Uncertainty')
+        # cot_uct     = f.select('Cloud_Optical_Thickness_Uncertainty')
+        # cer_uct     = f.select('Cloud_Effective_Radius_Uncertainty')
+        # cwp_uct     = f.select('Cloud_Water_Path_Uncertainty')
 
 
         # 1. If region (extent=) is specified, filter data within the specified region
@@ -941,8 +1180,9 @@ class modis_l2:
         if self.f03 is None:
             lon, lat  = upscale_modis_lonlat(lon0[:], lat0[:], scale=5, extra_grid=True)
             logic_1km = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
-            lon       = lon[logic_1km]
-            lat       = lat[logic_1km]
+            if not self.keep_dims:
+                lon       = lon[logic_1km]
+                lat       = lat[logic_1km]
         else:
             lon       = self.f03.data['lon']['data']
             lat       = self.f03.data['lat']['data']
@@ -952,36 +1192,65 @@ class modis_l2:
         lon_5km   = lon0[:]
         lat_5km   = lat0[:]
         logic_5km = (lon_5km >= lon_range[0]) & (lon_5km <= lon_range[1]) & (lat_5km >= lat_range[0]) & (lat_5km <= lat_range[1])
-        lon_5km   = lon_5km[logic_5km]
-        lat_5km   = lat_5km[logic_5km]
+        if not self.keep_dims:
+            lon_5km   = lon_5km[logic_5km]
+            lat_5km   = lat_5km[logic_5km]
         # -------------------------------------------------------------------------------------------------
 
 
         # Calculate 1. ctt, 2. cth, 3. cot, 4. cer, 5. ctp
         # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        cth           = get_data_h4(cth)[logic_5km]
-        ctt           = get_data_h4(ctt)[logic_5km]
-        ctp           = get_data_h4(ctp)[logic_1km]
 
-        cot0_data     = get_data_h4(cot0)[logic_1km]
-        cer0_data     = get_data_h4(cer0)[logic_1km]
-        cwp0_data     = get_data_h4(cwp0)[logic_1km]
+        cth           = get_data_h4(cth)
+        ctt           = get_data_h4(ctt)
+        ctp           = get_data_h4(ctp)
+        ctp_ir        = get_data_h4(ctp_ir)
 
-        cot_1621_data  = get_data_h4(cot_1621)[logic_1km]
-        cer_1621_data  = get_data_h4(cer_1621)[logic_1km]
-        cwp_1621_data  = get_data_h4(cwp_1621)[logic_1km]
+        cot0_data     = get_data_h4(cot0)
+        cer0_data     = get_data_h4(cer0)
+        cwp0_data     = get_data_h4(cwp0)
 
-        cot_pcl_data  = get_data_h4(cot_pcl)[logic_1km]
-        cer_pcl_data  = get_data_h4(cer_pcl)[logic_1km]
-        cwp_pcl_data  = get_data_h4(cwp_pcl)[logic_1km]
+        cot_1621_data  = get_data_h4(cot_1621)
+        cer_1621_data  = get_data_h4(cer_1621)
+        cwp_1621_data  = get_data_h4(cwp_1621)
 
-        cot_1621_pcl_data  = get_data_h4(cot_1621_pcl)[logic_1km]
-        cer_1621_pcl_data  = get_data_h4(cer_1621_pcl)[logic_1km]
-        cwp_1621_pcl_data  = get_data_h4(cwp_1621_pcl)[logic_1km]
+        cot_pcl_data  = get_data_h4(cot_pcl)
+        cer_pcl_data  = get_data_h4(cer_pcl)
+        cwp_pcl_data  = get_data_h4(cwp_pcl)
 
-        cot_uct = get_data_h4(cot_uct)[logic_1km]
-        cer_uct = get_data_h4(cer_uct)[logic_1km]
-        cwp_uct = get_data_h4(cwp_uct)[logic_1km]
+        cot_1621_pcl_data  = get_data_h4(cot_1621_pcl)
+        cer_1621_pcl_data  = get_data_h4(cer_1621_pcl)
+        cwp_1621_pcl_data  = get_data_h4(cwp_1621_pcl)
+
+        # cot_uct = get_data_h4(cot_uct)
+        # cer_uct = get_data_h4(cer_uct)
+        # cwp_uct = get_data_h4(cwp_uct)
+
+        if not self.keep_dims:
+            cth           = cth[logic_5km]
+            ctt           = ctt[logic_5km]
+            ctp           = ctp[logic_1km]
+            ctp_ir        = ctp_ir[logic_1km]
+
+            cot0_data     = cot0_data[logic_1km]
+            cer0_data     = cer0_data[logic_1km]
+            cwp0_data     = cwp0_data[logic_1km]
+
+            cot_1621_data  = cot_1621_data[logic_1km]
+            cer_1621_data  = cer_1621_data[logic_1km]
+            cwp_1621_data  = cwp_1621_data[logic_1km]
+
+            cot_pcl_data  = cot_pcl_data[logic_1km]
+            cer_pcl_data  = cer_pcl_data[logic_1km]
+            cwp_pcl_data  = cwp_pcl_data[logic_1km]
+
+            cot_1621_pcl_data  = cot_1621_pcl_data[logic_1km]
+            cer_1621_pcl_data  = cer_1621_pcl_data[logic_1km]
+            cwp_1621_pcl_data  = cwp_1621_pcl_data[logic_1km]
+
+            # cot_uct = get_data_h4(cot_uct)[logic_1km]
+            # cer_uct = get_data_h4(cer_uct)[logic_1km]
+            # cwp_uct = get_data_h4(cwp_uct)[logic_1km]
 
         cot     = cot0_data.copy()
         cer     = cer0_data.copy()
@@ -1002,9 +1271,9 @@ class modis_l2:
         cer_1621[logic_1621_invalid] = 0.0
         cwp_1621[logic_1621_invalid] = 0.0
 
-        cot_uct[logic_invalid]  = 0.0
-        cer_uct[logic_invalid]  = 0.0
-        cwp_uct[logic_invalid]  = 0.0
+        # cot_uct[logic_invalid]  = 0.0
+        # cer_uct[logic_invalid]  = 0.0
+        # cwp_uct[logic_invalid]  = 0.0
 
         logic_clear      = (cot0_data == 0.0)     | (cer0_data == 0.0)     | (cwp0_data == 0.0)     | (ctp == 1)
         logic_1621_clear = (cot_1621_data == 0.0) | (cer_1621_data == 0.0) | (cwp_1621_data == 0.0) | (ctp == 1)
@@ -1042,6 +1311,7 @@ class modis_l2:
             self.data['lon']      = dict(name='Longitude',                           data=np.hstack((self.data['lon']['data'], lon)),                   units='degrees')
             self.data['lat']      = dict(name='Latitude',                            data=np.hstack((self.data['lat']['data'], lat)),                   units='degrees')
             self.data['ctp']      = dict(name='Cloud phase optical proprties',       data=np.hstack((self.data['ctp']['data'], ctp)),                   units='N/A')
+            self.data['ctp_ir']   = dict(name='Cloud phase (IR)',                    data=np.hstack((self.data['ctp_ir']['data'], ctp_ir)),                units='N/A')
             self.data['cth']      = dict(name='Cloud top height',                    data=np.hstack((self.data['cth']['data'], cth)),                   units='m')
             self.data['ctt']      = dict(name='Cloud top temperature',               data=np.hstack((self.data['ctt']['data'], ctt)),                   units='K')
             self.data['cot']      = dict(name='Cloud optical thickness',             data=np.hstack((self.data['cot']['data'], cot)),                   units='N/A')
@@ -1050,9 +1320,9 @@ class modis_l2:
             self.data['cot_1621'] = dict(name='Cloud optical thickness (1621)',      data=np.hstack((self.data['cot_1621']['data'], cot_1621)),         units='N/A')
             self.data['cer_1621'] = dict(name='Cloud effective radius (1621)',       data=np.hstack((self.data['cer_1621']['data'], cer_1621)),         units='micron')
             self.data['cwp_1621'] = dict(name='Cloud water path (1621)',             data=np.hstack((self.data['cwp_1621']['data'], cwp_1621)),         units='g/m^2')
-            self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_uct']['data'], cot*cot_uct/100.0)), units='N/A')
-            self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_uct']['data'], cer*cer_uct/100.0)), units='micron')
-            self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=np.hstack((self.data['cwp_uct']['data'], cwp*cwp_uct/100.0)), units='g/m^2')
+            # self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=np.hstack((self.data['cot_uct']['data'], cot*cot_uct/100.0)), units='N/A')
+            # self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=np.hstack((self.data['cer_uct']['data'], cer*cer_uct/100.0)), units='micron')
+            # self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=np.hstack((self.data['cwp_uct']['data'], cwp*cwp_uct/100.0)), units='g/m^2')
             self.data['lon_5km']  = dict(name='Longitude at 5km',                    data=np.hstack((self.data['lon_5km']['data'], lon_5km)),           units='degrees')
             self.data['lat_5km']  = dict(name='Latitude at 5km',                     data=np.hstack((self.data['lat_5km']['data'], lat_5km)),           units='degrees')
 
@@ -1066,6 +1336,7 @@ class modis_l2:
             self.data['lon']      = dict(name='Longitude',                           data=lon,                   units='degrees')
             self.data['lat']      = dict(name='Latitude',                            data=lat,                   units='degrees')
             self.data['ctp']      = dict(name='Cloud phase optical proprties',       data=ctp,                   units='N/A')
+            self.data['ctp_ir']   = dict(name='Cloud phase (IR)',                    data=ctp_ir,                units='N/A')
             self.data['cth']      = dict(name='Cloud top height',                    data=cth,                   units='m')
             self.data['ctt']      = dict(name='Cloud top temperature',               data=ctt,                   units='K')
             self.data['cot']      = dict(name='Cloud optical thickness',             data=cot,                   units='N/A')
@@ -1074,9 +1345,11 @@ class modis_l2:
             self.data['cot_1621'] = dict(name='Cloud optical thickness (1621)',      data=cot_1621,              units='N/A')
             self.data['cer_1621'] = dict(name='Cloud effective radius (1621)',       data=cer_1621,              units='micron')
             self.data['cwp_1621'] = dict(name='Cloud water path (1621)',             data=cwp_1621,              units='g/m^2')
-            self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=cot*cot_uct/100.0,     units='N/A')
-            self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=cer*cer_uct/100.0,     units='micron')
-            self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=cwp*cwp_uct/100.0,     units='g/m^2')
+            # self.data['cot_uct']  = dict(name='Cloud optical thickness uncertainty', data=cot*cot_uct/100.0,     units='N/A')
+            # self.data['cer_uct']  = dict(name='Cloud effective radius uncertainty',  data=cer*cer_uct/100.0,     units='micron')
+            # self.data['cwp_uct']  = dict(name='Cloud water path uncertainty',        data=cwp*cwp_uct/100.0,     units='g/m^2')
+            self.data['lon_5km']  = dict(name='Longitude at 5km',                    data=lon_5km,               units='degrees')
+            self.data['lat_5km']  = dict(name='Latitude at 5km',                     data=lat_5km,               units='degrees')
 
 
 
@@ -1298,165 +1571,6 @@ class modis_35_l2:
 
 
 
-class modis_03:
-
-    """
-    Read MODIS 03 geolocation data
-
-    Input:
-        fnames=   : keyword argument, default=None, Python list of the file path of the original HDF4 file
-        extent=   : keyword argument, default=None, region to be cropped, defined by [westmost, eastmost, southmost, northmost]
-        vnames=   : keyword argument, default=[], additional variable names to be read in to self.data
-        overwrite=: keyword argument, default=False, whether to overwrite or not
-        verbose=  : keyword argument, default=False, verbose tag
-
-    Output:
-        self.data
-                ['lon']
-                ['lat']
-                ['sza']
-                ['saa']
-                ['vza']
-                ['vaa']
-    """
-
-
-    ID = 'MODIS 03 Geolocation Product'
-
-
-    def __init__(self, \
-                 fnames    = None,  \
-                 extent    = None,  \
-                 vnames    = [],    \
-                 verbose   = False):
-
-        self.fnames     = fnames      # file name of the pickle file
-        self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
-        self.verbose    = verbose     # verbose tag
-
-        for fname in self.fnames:
-
-            self.read(fname)
-
-            if len(vnames) > 0:
-                self.read_vars(fname, vnames=vnames)
-
-
-    def read(self, fname):
-
-        """
-        Read solar and sensor angles
-
-        self.data
-            ['lon']
-            ['lat']
-            ['sza']
-            ['saa']
-            ['vza']
-            ['vaa']
-
-        self.logic
-        """
-
-        try:
-            from pyhdf.SD import SD, SDC
-        except ImportError:
-            msg = 'Warning [modis_03]: To use \'modis_03\', \'pyhdf\' needs to be installed.'
-            raise ImportError(msg)
-
-        f     = SD(fname, SDC.READ)
-
-        # lon lat
-        lat0       = f.select('Latitude')
-        lon0       = f.select('Longitude')
-
-        sza0       = f.select('SolarZenith')
-        saa0       = f.select('SolarAzimuth')
-        vza0       = f.select('SensorZenith')
-        vaa0       = f.select('SensorAzimuth')
-
-
-        # 1. If region (extent=) is specified, filter data within the specified region
-        # 2. If region (extent=) is not specified, filter invalid data
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        lon = lon0[:]
-        lat = lat0[:]
-
-        if self.extent is None:
-            lon_range = [-180.0, 180.0]
-            lat_range = [-90.0 , 90.0]
-        else:
-            lon_range = [self.extent[0], self.extent[1]]
-            lat_range = [self.extent[2], self.extent[3]]
-
-        logic     = (lon >= lon_range[0]) & (lon <= lon_range[1]) & (lat >= lat_range[0]) & (lat <= lat_range[1])
-        lon       = lon[logic]
-        lat       = lat[logic]
-        # -------------------------------------------------------------------------------------------------
-
-
-        # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
-        # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        sza0_data = get_data_h4(sza0)
-        saa0_data = get_data_h4(saa0)
-        vza0_data = get_data_h4(vza0)
-        vaa0_data = get_data_h4(vaa0)
-
-        sza = sza0_data[logic]
-        saa = saa0_data[logic]
-        vza = vza0_data[logic]
-        vaa = vaa0_data[logic]
-
-        f.end()
-        # -------------------------------------------------------------------------------------------------
-
-        if hasattr(self, 'data'):
-
-            self.logic[fname] = {'1km':logic}
-
-            self.data['lon']   = dict(name='Longitude'                 , data=np.hstack((self.data['lon']['data'], lon    )), units='degrees')
-            self.data['lat']   = dict(name='Latitude'                  , data=np.hstack((self.data['lat']['data'], lat    )), units='degrees')
-            self.data['sza']   = dict(name='Solar Zenith Angle'        , data=np.hstack((self.data['sza']['data'], sza    )), units='degrees')
-            self.data['saa']   = dict(name='Solar Azimuth Angle'       , data=np.hstack((self.data['saa']['data'], saa    )), units='degrees')
-            self.data['vza']   = dict(name='Sensor Zenith Angle'       , data=np.hstack((self.data['vza']['data'], vza    )), units='degrees')
-            self.data['vaa']   = dict(name='Sensor Azimuth Angle'      , data=np.hstack((self.data['vaa']['data'], vaa    )), units='degrees')
-
-        else:
-            self.logic = {}
-            self.logic[fname] = {'1km':logic}
-
-            self.data  = {}
-            self.data['lon']   = dict(name='Longitude'                 , data=lon    , units='degrees')
-            self.data['lat']   = dict(name='Latitude'                  , data=lat    , units='degrees')
-            self.data['sza']   = dict(name='Solar Zenith Angle'        , data=sza    , units='degrees')
-            self.data['saa']   = dict(name='Solar Azimuth Angle'       , data=saa    , units='degrees')
-            self.data['vza']   = dict(name='Sensor Zenith Angle'       , data=vza    , units='degrees')
-            self.data['vaa']   = dict(name='Sensor Azimuth Angle'      , data=vaa    , units='degrees')
-
-
-    def read_vars(self, fname, vnames=[]):
-
-        try:
-            from pyhdf.SD import SD, SDC
-        except ImportError:
-            msg = 'Warning [modis_03]: To use \'modis_03\', \'pyhdf\' needs to be installed.'
-            raise ImportError(msg)
-
-        logic = self.logic[fname]['1km']
-
-        f     = SD(fname, SDC.READ)
-
-        for vname in vnames:
-
-            data0 = f.select(vname)
-            data  = get_data_h4(data0)[logic]
-            if vname.lower() in self.data.keys():
-                self.data[vname.lower()] = dict(name=vname, data=np.hstack((self.data[vname.lower()]['data'], data)), units=data0.attributes()['units'])
-            else:
-                self.data[vname.lower()] = dict(name=vname, data=data, units=data0.attributes()['units'])
-
-        f.end()
-
 
 class viirs_03:
 
@@ -1488,12 +1602,13 @@ class viirs_03:
                  fnames    = None,  \
                  extent    = None,  \
                  vnames    = [],    \
-                 overwrite = False, \
+                 keep_dims = False, \
                  verbose   = False):
 
         self.fnames     = fnames      # file name of the raw netCDF files
         self.extent     = extent      # specified region [westmost, eastmost, southmost, northmost]
         self.verbose    = verbose     # verbose tag
+        self.keep_dims  = keep_dims
 
         for fname in self.fnames:
 
@@ -1562,8 +1677,9 @@ class viirs_03:
         lat = get_data_nc(lat0)
 
         logic = (lon>=lon_range[0]) & (lon<=lon_range[1]) & (lat>=lat_range[0]) & (lat<=lat_range[1])
-        lon   = lon[logic]
-        lat   = lat[logic]
+        if not self.keep_dims:
+            lon   = lon[logic]
+            lat   = lat[logic]
         #\-----------------------------------------------------------------------------/
 
         # solar geometries
@@ -1580,15 +1696,17 @@ class viirs_03:
 
         # Calculate 1. sza, 2. saa, 3. vza, 4. vaa
         #/-----------------------------------------------------------------------------\
-        sza0_data = get_data_nc(sza0)
-        saa0_data = get_data_nc(saa0)
-        vza0_data = get_data_nc(vza0)
-        vaa0_data = get_data_nc(vaa0)
 
-        sza = sza0_data[logic]
-        saa = saa0_data[logic]
-        vza = vza0_data[logic]
-        vaa = vaa0_data[logic]
+        sza = get_data_nc(sza0)
+        saa = get_data_nc(saa0)
+        vza = get_data_nc(vza0)
+        vaa = get_data_nc(vaa0)
+
+        if not self.keep_dims:
+            sza = sza[logic]
+            saa = saa[logic]
+            vza = vza[logic]
+            vaa = vaa[logic]
 
         f.close()
         #\-----------------------------------------------------------------------------/
@@ -1668,11 +1786,13 @@ class viirs_l1b:
                  f03        = None,  \
                  extent     = None,  \
                  bands      = None,  \
+                 keep_dims  = False, \
                  verbose    = False):
 
         self.fnames     = fnames      # Python list of netCDF filenames
         self.f03        = f03         # geolocation class object created using the `viirs_03` reader
         self.bands      = bands       # Python list of bands to extract information
+        self.keep_dims  = keep_dims   # retain 2D shape; if True -> f03 mask is not applied
 
 
         filename = os.path.basename(fnames[0]).lower()
@@ -1773,18 +1893,19 @@ class viirs_l1b:
         # Calculate 1. radiance, 2. reflectance from the raw data
         #/-----------------------------------------------------------------------------\
 
-        if self.f03 is not None:
-            mask = self.f03.logic[get_fname_pattern(fname)]['mask']
-            rad  = np.zeros((len(self.bands), mask[mask==True].size))
-            ref  = np.zeros((len(self.bands), mask[mask==True].size))
-
-        else:
+        if (self.keep_dims) or (self.f03 is None):
             rad = np.zeros((len(self.bands),
                            f.groups['observation_data'].variables[self.bands[0]].shape[0],
                            f.groups['observation_data'].variables[self.bands[0]].shape[1]))
             ref = np.zeros((len(self.bands),
                            f.groups['observation_data'].variables[self.bands[0]].shape[0],
                            f.groups['observation_data'].variables[self.bands[0]].shape[1]))
+
+        else:
+            mask = self.f03.logic[get_fname_pattern(fname)]['mask']
+            rad  = np.zeros((len(self.bands), mask.sum()))
+            ref  = np.zeros((len(self.bands), mask.sum()))
+
 
         wvl = np.zeros(len(self.bands), dtype='uint16')
 
@@ -1794,18 +1915,21 @@ class viirs_l1b:
 
             nc_dset = f.groups['observation_data'].variables[self.bands[i]]
             data = self._remove_flags(nc_dset)
-            if self.f03 is not None:
+            if not self.keep_dims:
                 data = data[mask]
 
             # apply scaling, offset, and unit conversions
-            # add_offset is usually 0. for VIIRS solar bands
-            rad0 = (data - nc_dset.getncattr('radiance_add_offset')) * nc_dset.getncattr('radiance_scale_factor')
+            # add_offset is usually 0 for VIIRS solar bands
+            if hasattr(nc_dset, 'radiance_add_offset'):
+                rad0 = (data - nc_dset.getncattr('radiance_add_offset')) * nc_dset.getncattr('radiance_scale_factor') # radiance
+                ref[i] = (data - nc_dset.getncattr('add_offset')) * nc_dset.getncattr('scale_factor') # reflectance
 
-            # if nc_dset.getncattr('radiance_units').endswith('micrometer'):
+            else: # naming convention changes for emissive bands
+                rad0 = (data - nc_dset.getncattr('add_offset')) * nc_dset.getncattr('scale_factor') # radiance
+                ref[i] = np.full(ref[i].shape, -99, dtype='int8') # make reflectance -99 for emissive bands
+
             rad0 /= 1000. # from <per micron> to <per nm>
             rad[i] = rad0
-
-            ref[i] = (data - nc_dset.getncattr('add_offset')) * nc_dset.getncattr('scale_factor')
             wvl[i] = VIIRS_ALL_BANDS[self.bands[i]]
 
         f.close()
@@ -2206,7 +2330,6 @@ class viirs_cldprop_l2:
             self.data['lat']      = dict(name='Latitude',                            data=np.hstack((self.data['lat']['data'], lat)),                   units='degrees')
             self.data['ctp']      = dict(name='Cloud phase optical proprties',       data=np.hstack((self.data['ctp']['data'], ctp)),                   units='N/A')
             self.data['cth']      = dict(name='Cloud top height',                    data=np.hstack((self.data['cth']['data'], cth)),                   units='m')
-            self.data['ctt']      = dict(name='Cloud top temperature',               data=np.hstack((self.data['ctt']['data'], ctt)),                   units='K')
             self.data['cot']      = dict(name='Cloud optical thickness',             data=np.hstack((self.data['cot']['data'], cot)),                   units='N/A')
             self.data['cer']      = dict(name='Cloud effective radius',              data=np.hstack((self.data['cer']['data'], cer)),                   units='micron')
             self.data['cwp']      = dict(name='Cloud water path',                    data=np.hstack((self.data['cwp']['data'], cwp)),                   units='g/m^2')

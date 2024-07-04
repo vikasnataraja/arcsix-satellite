@@ -2,6 +2,7 @@ import os
 import sys
 from argparse import ArgumentParser
 
+no_video_dirs = ['ice_path', 'water_path', 'optical_thickness', 'cloud_phase', 'cloud_top_height_temperature']
 if __name__ == "__main__":
 
     parser = ArgumentParser(prog='create_video')
@@ -14,6 +15,9 @@ if __name__ == "__main__":
     subs = sorted([f for f in os.listdir(args.fdir) if os.path.isdir(os.path.join(args.fdir, f))])
 
     for sub in subs:
+        if sub in no_video_dirs:
+            print("Message [ffmpeg_txt]: Skipping {}...".format(sub))
+            continue
 
         mp4name = os.path.join(args.fdir, sub) + '.mp4'
 
