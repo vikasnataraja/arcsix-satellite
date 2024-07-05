@@ -568,7 +568,7 @@ class Imagery:
                         # vmin=0., vmax=1.,
                         transform=proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) False Color (3-6-7) - ".format(instrument, satellite) + dt_title
+        title = "{} ({}) True Color - ".format(instrument, satellite) + dt_title
         self.add_ancillary(ax, buoys, title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]

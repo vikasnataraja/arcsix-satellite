@@ -449,7 +449,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, metadata, geojson_fpa
 
             # print("Message [modis_viirs_ref_geo]: yyyydoy", yyyydoy)
             if yyyydoy_hhmm in exist_acq_dts: # if already processed, then skip
-                print("Message [modis_viirs_ref_geo]: Skipping {} as it has likely already been processed previously".format(geo_file))
+                # print("Message [modis_viirs_ref_geo]: Skipping {} as it has likely already been processed previously".format(geo_file))
                 continue
 
 
