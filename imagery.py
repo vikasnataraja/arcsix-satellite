@@ -227,7 +227,7 @@ class Imagery:
         return masked_dat
 
 
-    def add_ancillary(self, ax, buoys, title=None, scale=1):
+    def add_ancillary(self, ax, buoys=None, title=None, scale=1):
         # ax.scatter(cfs_alert[0], cfs_alert[1], marker='*', s=30, color='white', transform=proj_data, zorder=2)
         # ax.text(cfs_alert[0]-0.5, cfs_alert[1]-0.5, "Stn. Alert", ha="center", color='white', transform=proj_data,
         #         fontsize=14, fontweight="bold", zorder=2)
@@ -281,9 +281,12 @@ class Imagery:
                 ax.scatter(lons[bid][0], lats[bid][0], marker='s', s=30, edgecolor='black', facecolor=colors[i], transform=proj_data, zorder=2, alpha=0.7)
                 ax.plot(lons[bid], lats[bid], linewidth=1.5, color=colors[i], transform=proj_data, zorder=2, alpha=0.7)
                 ax.scatter(lons[bid][-1], lats[bid][-1], marker='*', s=100, edgecolor='black', facecolor=colors[i], transform=proj_data, zorder=2, alpha=1)
-                # text = "{}\n{}".format(bid, dt[bid][-1].strftime("%Y-%m-%d: %H%MZ"))
+
                 text = str(bid)
-                ax.text(lons[bid][-1] + 2, lats[bid][-1] - 0.2, text, ha="center", va="center", transform=proj_data, color=colors[i],
+                x_offset, y_offset = -2.5, -0.02 # offset for text
+                if text == "J":
+                    x_offset, y_offset = 1.5, -0.1 # buoy J is drifting east, others are drifting west
+                ax.text(lons[bid][-1] + x_offset, lats[bid][-1] + y_offset, text, ha="center", va="center", transform=proj_data, color=colors[i],
                         fontsize=10, fontweight="bold", zorder=2)
 
 
@@ -381,7 +384,7 @@ class Imagery:
                         transform=proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) False Color (7-2-1) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax, buoys, title)
+        self.add_ancillary(ax, buoys=buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
@@ -432,7 +435,7 @@ class Imagery:
                         transform=proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) False Color (3-6-7) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax, buoys, title)
+        self.add_ancillary(ax, buoys=buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
@@ -487,7 +490,7 @@ class Imagery:
                         transform=proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) True Color - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax, buoys, title)
+        self.add_ancillary(ax, buoys=buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
@@ -542,7 +545,7 @@ class Imagery:
         else:
             title = "{} ({}) False Color (1.38-1.61-2.25$\;\mu m$) - ".format(instrument, satellite) + dt_title
 
-        self.add_ancillary(ax, buoys, title)
+        self.add_ancillary(ax, buoys=buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
@@ -597,7 +600,7 @@ class Imagery:
         else:
             title = "{} ({}) False Color (10.76-1.61-2.25$\;\mu m$) - ".format(instrument, satellite) + dt_title
 
-        self.add_ancillary(ax, buoys, title)
+        self.add_ancillary(ax, buoys=buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
@@ -686,7 +689,7 @@ class Imagery:
                             transform=proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) LWP - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys, title, scale=1.4)
+        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y00, ax=ax00, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -707,7 +710,7 @@ class Imagery:
                         transform=proj_data)
         # ax01.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) LWP (1621) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys, title, scale=1.4)
+        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y01, ax=ax01, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -809,7 +812,7 @@ class Imagery:
                             cmap=cmap,
                             transform=proj_data)
         title = "{} ({}) IWP - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys, title, scale=1.4)
+        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y00, ax=ax00, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -829,7 +832,7 @@ class Imagery:
                             cmap=cmap,
                             transform=proj_data)
         title = "{} ({}) IWP (1621) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys, title, scale=1.4)
+        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y01, ax=ax01, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -901,7 +904,7 @@ class Imagery:
                             transform=proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) COT - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys, title, scale=1.4)
+        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y00, ax=ax00, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -922,7 +925,7 @@ class Imagery:
                             transform=proj_data)
 
         title = "{} ({}) COT (1621) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys, title, scale=1.4)
+        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y01, ax=ax01, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -1001,7 +1004,7 @@ class Imagery:
                             transform=proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) Cloud Phase (SWIR/COP) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys, title, scale=1.4)
+        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
         ax00.set_extent(ccrs_views[mode]['view_extent'], proj_data)
 
         # create legend labels
@@ -1022,7 +1025,7 @@ class Imagery:
                     transform=proj_data)
         # ax01.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) Cloud Phase (IR) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys, title, scale=1.4)
+        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
         ax01.set_extent(ccrs_views[mode]['view_extent'], proj_data
                         )
         # create legend labels
@@ -1083,7 +1086,7 @@ class Imagery:
                             transform=proj_data)
 
         title = "{} ({}) Cloud Top Height - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys, title, scale=1.4)
+        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
 
         for i in range(len(plot_util.cth_cmap_ticklabels)):
             patches_legend_cth.append(matplotlib.patches.Patch(color=plot_util.cth_cmap_arr[i] , label=plot_util.cth_cmap_ticklabels[i]))
@@ -1117,7 +1120,7 @@ class Imagery:
                             transform=proj_data)
 
         title = "{} ({}) Cloud Top Temperature - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys, title, scale=1.4)
+        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
         for i in range(len(ctt_cmap_ticklabels)):
             patches_legend_ctt.append(matplotlib.patches.Patch(color=plot_util.ctt_cmap_arr[i] , label=ctt_cmap_ticklabels[i]))
 
