@@ -94,6 +94,8 @@ Average time taken for downloading and producing 10 different kinds of L1 and L2
 ## Acknowledgements
 Some of the functionalities, particularly in `arctic_gridding_utils.py`, have been adapted from <a href="https://github.com/hong-chen/er3t">EaR3T</a>.
 
+L1b and L2 data is downloaded from the NASA LAADS and LANCE DAACs.
+
 This work utilized the Alpine high performance computing resource at the University of Colorado Boulder. Alpine is jointly funded by the University of Colorado Boulder, the University of Colorado Anschutz, and Colorado State University.
 
 Data storage supported by the University of Colorado Boulder ‘PetaLibrary’.
