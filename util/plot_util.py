@@ -1,0 +1,64 @@
+import os
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as font_manager
+
+# Add every font at the specified location
+if 'MPL_FONT_DIR' in os.environ.keys():
+    font_dir = [os.environ['MPL_FONT_DIR']]
+    for font in font_manager.findSystemFonts(font_dir):
+        font_manager.fontManager.addfont(font)
+
+# set matplotlib style
+if 'MPL_STYLE' in os.environ.keys():
+    mpl_style = os.environ['MPL_STYLE']
+else:
+    mpl_style = 'ggplot'
+
+# Set font family globally
+plt.rc('font',**{'family':'serif','serif':['EB Garamond']})
+
+############################## Cloud phase IR colormap ##############################
+ctp_ir_cmap_arr = np.array([
+                            [0.5, 0.5, 0.5, 1.], # clear
+                            [0., 0., 0.55, 1.], # liquid
+                            [0.75, 0.85, 0.95, 1.], # ice
+                            [0.55, 0.55, 0.95, 1.], # mixed
+                            [0., 0.95, 0.95, 1.]])# undet. phase
+ctp_ir_cmap_ticklabels = np.array(["clear", "liquid", "ice", "mixed phase", "uncertain"])
+ctp_ir_tick_locs = (np.arange(len(ctp_ir_cmap_ticklabels)) + 0.5)*(len(ctp_ir_cmap_ticklabels) - 1)/len(ctp_ir_cmap_ticklabels)
+ctp_ir_cmap = matplotlib.colors.ListedColormap(ctp_ir_cmap_arr)
+ctp_ir_cmap.set_bad("black", 1)
+
+
+############################## Cloud phase SWIR/COP colormap ##############################
+ctp_swir_cmap_arr = np.array([
+                            #   [0, 0, 0, 1], # undet. mask
+                              [0.5, 0.5, 0.5, 1.], # clear
+                              [0., 0., 0.55, 1.], # liquid
+                              [0.75, 0.85, 0.95, 1.], # ice
+                              [0., 0.95, 0.95, 1.]])# no phase (liquid)
+ctp_swir_cmap_ticklabels = np.array(["clear", "liquid", "ice", "uncertain"])
+ctp_swir_tick_locs = (np.arange(len(ctp_swir_cmap_ticklabels)) + 0.5)*(len(ctp_swir_cmap_ticklabels) - 1)/len(ctp_swir_cmap_ticklabels)
+ctp_swir_cmap = matplotlib.colors.ListedColormap(ctp_swir_cmap_arr)
+# ctp_swir_cmap.set_bad("black", 1)
+
+
+############################## Cloud top height colormap ##############################
+cth_cmap_arr = np.array([[0., 0., 0., 1], # no retrieval
+                        [0.5, 0.5, 0.5, 1], # clear
+                        [0.05, 0.7, 0.95, 1], # low clouds
+                        [0.65, 0.05, 0.3, 1.],  # mid clouds
+                        [0.95, 0.95, 0.95, 1.]])    # high clouds
+cth_cmap_ticklabels = ["undet.", "clear", "low\n0.1 - 2 km", "mid\n2 - 6 km", "high\n>=6 km"]
+cth_tick_locs = (np.arange(len(cth_cmap_ticklabels)) + 0.5)*(len(cth_cmap_ticklabels) - 1)/len(cth_cmap_ticklabels)
+cth_cmap = matplotlib.colors.ListedColormap(cth_cmap_arr)
+
+############################## Cloud top temperature colormap ##############################
+ctt_cmap_arr = np.array(list(plt.get_cmap('Blues_r')(np.linspace(0, 0.8, 4))) + list(plt.get_cmap('Reds')(np.linspace(0, 1, 4))))
+ctt_cmap = matplotlib.colors.ListedColormap(ctt_cmap_arr)
+
+
+arctic_cloud_cmap = 'RdBu_r'
+arctic_cloud_alt_cmap = 'RdBu_r'

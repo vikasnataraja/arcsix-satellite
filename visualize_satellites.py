@@ -1,9 +1,9 @@
 import os
 import sys
 import argparse
-import h5py
 import numpy as np
-from arctic_gridding_utils import modis_l1b, modis_03, modis_l2, viirs_l1b, viirs_03
+from util.arctic_gridding_utils import modis_l1b, modis_03, modis_l2, viirs_l1b, viirs_03
+from util.arctic_gridding_utils import within_range, get_satellite_group_name
 import datetime
 from tqdm import tqdm
 from imagery import Imagery
@@ -17,65 +17,7 @@ START_TIME = datetime.datetime.now()
 EARTH_RADIUS = 6371.009
 SZA_LIMIT = 81.36
 
-utf8_type = h5py.string_dtype('utf-8', 30) # for string encoding in HDF5
 
-def get_swath_area(lon, lat):
-    swath_area = np.abs(np.abs(lon.max()) - np.abs(lon.min())) * np.abs(np.abs(lat.max()) - np.abs(lat.min()))
-    return swath_area
-
-# def calc_lwp(cot, cer, rho_water=1000.):
-#     return 2. * cot * cer * 1e-6 * rho_water * 1e3 / 3.
-
-
-
-def within_range(fname, start_dt, end_dt):
-    fname = os.path.basename(fname)
-    yyyydoy, hhmm = fname.split('.')[1], fname.split('.')[2]
-    yyyydoy = yyyydoy[1:] # the first character is "A"
-
-    sat_dt = datetime.datetime.strptime(yyyydoy + hhmm, "%Y%j%H%M")
-
-    if start_dt <= sat_dt <= end_dt:
-        return True
-    else:
-        return False
-
-
-def get_last_opass(sorted_geofiles):
-
-    last_opass_fname = os.path.basename(sorted_geofiles[-1])
-
-    yyyydoy, hhmm = last_opass_fname.split('.')[1], last_opass_fname.split('.')[2]
-    yyyydoy = yyyydoy[1:] # the first character is "A"
-
-    last_opass_dt = datetime.datetime.strptime(yyyydoy + hhmm, "%Y%j%H%M")
-    return last_opass_dt
-
-
-def get_satellite_group_name(acq_dt, geo_file, encode=False):
-    # satellite name
-    if os.path.basename(geo_file)[:3] == "MOD":
-        satellite  = "Terra"
-        group_name = "T" + acq_dt[1:]
-    elif os.path.basename(geo_file)[:3] == "MYD":
-        satellite  = "Aqua"
-        group_name = "A" + acq_dt[1:]
-    elif os.path.basename(geo_file)[:3] == "VNP":
-        satellite  = "Suomi-NPP"
-        group_name = "S" + acq_dt[1:]
-    elif os.path.basename(geo_file)[:3] == "VJ1":
-        satellite  = "NOAA-20/JPSS-1"
-        group_name = "J" + acq_dt[1:]
-    elif os.path.basename(geo_file)[:3] == "VJ2":
-        satellite  = "NOAA-21/JPSS-2"
-        group_name = "N" + acq_dt[1:]
-    else:
-        satellite  = "Unknown"
-        group_name = "Z" + acq_dt[1:]
-
-    if encode:
-        satellite = np.array(satellite.encode("utf-8"), dtype=utf8_type) # encode string for HDF5
-    return satellite, group_name
 ################################################################################################################
 
 def get_all_modis_files(fdir):

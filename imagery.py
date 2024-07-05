@@ -15,92 +15,10 @@ import matplotlib.ticker as mticker
 import cartopy.crs as ccrs
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 
-import cmasher as cmr
+from util import plot_util
 
-import platform
-import matplotlib.font_manager as font_manager
-uname = platform.uname()
-
-# Add every font at the specified location
-if 'macbook' in uname.node.lower() and 'darwin' in uname.system.lower():
-    font_dir = ['/Users/vikas/Downloads/EB_Garamond/static/']
-    mpl_style = '/Users/vikas/.matplotlib/whiteseaborn.mplstyle'
-    for font in font_manager.findSystemFonts(font_dir):
-        font_manager.fontManager.addfont(font)
-elif 'linux' in uname.system.lower():
-    # Add every font at the specified location
-    font_dir = ['/projects/viha4393/software/EB_Garamond/static/']
-    mpl_style = '/projects/viha4393/software/matplotlib/whiteseaborn.mplstyle'
-    for font in font_manager.findSystemFonts(font_dir):
-        font_manager.fontManager.addfont(font)
-else:
-    mpl_style = 'ggplot'
-
-# Set font family globally
-plt.rc('font',**{'family':'serif','serif':['EB Garamond']})
 
 SZA_LIMIT = 81.36
-
-base_cmap = cmr.arctic
-n_colors = 256
-dark_colors = 130
-dark = np.linspace(0.15, 0.6, dark_colors)
-bright = np.linspace(0.6, 1.0, n_colors - dark_colors)
-cmap_arr = np.hstack([dark, bright])
-arctic_cmap = matplotlib.colors.ListedColormap(base_cmap(cmap_arr))
-
-dark_colors = 0.1
-medium_colors = 0.3
-dark = np.linspace(0.0, 0.3, int(dark_colors*n_colors))
-medium = np.linspace(0.3, 0.8, int(medium_colors*n_colors))
-bright = np.linspace(0.8, 1.0, n_colors - int(dark_colors*n_colors) - int(medium_colors*n_colors))
-cmap_arr = np.hstack([dark, medium, bright])
-arctic_alt_cmap = matplotlib.colors.ListedColormap(base_cmap(cmap_arr))
-
-############################## Cloud phase IR colormap ##############################
-ctp_ir_cmap_arr = np.array([
-                            [0.5, 0.5, 0.5, 1.], # clear
-                            [0., 0., 0.55, 1.], # liquid
-                            [0.75, 0.85, 0.95, 1.], # ice
-                            [0.55, 0.55, 0.95, 1.], # mixed
-                            [0., 0.95, 0.95, 1.]])# undet. phase
-ctp_ir_cmap_ticklabels = np.array(["clear", "liquid", "ice", "mixed phase", "uncertain"])
-ctp_ir_tick_locs = (np.arange(len(ctp_ir_cmap_ticklabels)) + 0.5)*(len(ctp_ir_cmap_ticklabels) - 1)/len(ctp_ir_cmap_ticklabels)
-ctp_ir_cmap = matplotlib.colors.ListedColormap(ctp_ir_cmap_arr)
-ctp_ir_cmap.set_bad("black", 1)
-
-
-############################## Cloud phase SWIR/COP colormap ##############################
-ctp_swir_cmap_arr = np.array([
-                            #   [0, 0, 0, 1], # undet. mask
-                              [0.5, 0.5, 0.5, 1.], # clear
-                              [0., 0., 0.55, 1.], # liquid
-                              [0.75, 0.85, 0.95, 1.], # ice
-                              [0., 0.95, 0.95, 1.]])# no phase (liquid)
-ctp_swir_cmap_ticklabels = np.array(["clear", "liquid", "ice", "uncertain"])
-ctp_swir_tick_locs = (np.arange(len(ctp_swir_cmap_ticklabels)) + 0.5)*(len(ctp_swir_cmap_ticklabels) - 1)/len(ctp_swir_cmap_ticklabels)
-ctp_swir_cmap = matplotlib.colors.ListedColormap(ctp_swir_cmap_arr)
-# ctp_swir_cmap.set_bad("black", 1)
-
-
-############################## Cloud top height colormap ##############################
-cth_cmap_arr = np.array([[0., 0., 0., 1], # no retrieval
-                        [0.5, 0.5, 0.5, 1], # clear
-                        [0.05, 0.7, 0.95, 1], # low clouds
-                        [0.65, 0.05, 0.3, 1.],  # mid clouds
-                        [0.95, 0.95, 0.95, 1.]])    # high clouds
-cth_cmap_ticklabels = ["undet.", "clear", "low\n0.1 - 2 km", "mid\n2 - 6 km", "high\n>=6 km"]
-cth_tick_locs = (np.arange(len(cth_cmap_ticklabels)) + 0.5)*(len(cth_cmap_ticklabels) - 1)/len(cth_cmap_ticklabels)
-cth_cmap = matplotlib.colors.ListedColormap(cth_cmap_arr)
-
-############################## Cloud top temperature colormap ##############################
-ctt_cmap_arr = np.array(list(plt.get_cmap('Blues_r')(np.linspace(0, 0.8, 4))) + list(plt.get_cmap('Reds')(np.linspace(0, 1, 4))))
-ctt_cmap = matplotlib.colors.ListedColormap(ctt_cmap_arr)
-
-
-arctic_cloud_cmap = 'RdBu_r'
-arctic_cloud_alt_cmap = 'RdBu_r'
-
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -453,7 +371,7 @@ class Imagery:
             img_fci = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -504,7 +422,7 @@ class Imagery:
             img_fci = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -558,7 +476,7 @@ class Imagery:
             rgb = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, rgb, proj_plot, proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -610,7 +528,7 @@ class Imagery:
             img_fci = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -665,7 +583,7 @@ class Imagery:
             img_fci = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -744,11 +662,11 @@ class Imagery:
             im_lwp[im_lwp > vmax]           = vmax
             im_lwp_1621[im_lwp_1621 > vmax] = vmax
             cbar_ticks = np.linspace(0, vmax, 5, dtype='int')
-            cmap = arctic_cloud_cmap
+            cmap = plot_util.arctic_cloud_cmap
             extend = 'max'
         else:
             cbar_ticks = np.linspace(0, np.nanmax([im_lwp, im_lwp_1621]), 5, dtype='int')
-            cmap = arctic_cloud_alt_cmap
+            cmap = plot_util.arctic_cloud_alt_cmap
             extend = 'neither'
 
         if geojson_fpath is not None:
@@ -758,7 +676,7 @@ class Imagery:
         ##############################################################
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_lwp,
@@ -868,11 +786,11 @@ class Imagery:
             im_iwp[im_iwp > vmax]           = vmax
             im_iwp_1621[im_iwp_1621 > vmax] = vmax
             cbar_ticks = np.linspace(0, vmax, 5, dtype='int')
-            cmap = arctic_cloud_cmap
+            cmap = plot_util.arctic_cloud_cmap
             extend = 'max'
         else:
             cbar_ticks = np.linspace(0, np.nanmax([im_iwp_1621, im_iwp_1621]), 5, dtype='int')
-            cmap = arctic_cloud_alt_cmap
+            cmap = plot_util.arctic_cloud_alt_cmap
             extend = 'neither'
 
         if geojson_fpath is not None:
@@ -880,7 +798,7 @@ class Imagery:
             im_iwp_1621 = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_iwp_1621, proj_plot, proj_data)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ##############################################################
 
@@ -961,11 +879,11 @@ class Imagery:
             im_cot[im_cot > vmax]           = vmax
             im_cot_1621[im_cot_1621 > vmax] = vmax
             cbar_ticks = np.linspace(0, vmax, 5, dtype='int')
-            cmap = arctic_cloud_cmap
+            cmap = plot_util.arctic_cloud_cmap
             extend = 'max'
         else:
             cbar_ticks = np.linspace(0, np.nanmax([im_cot, im_cot_1621]), 5, dtype='int')
-            cmap = arctic_cloud_alt_cmap
+            cmap = plot_util.arctic_cloud_alt_cmap
             extend = 'neither'
 
         if geojson_fpath is not None:
@@ -973,7 +891,7 @@ class Imagery:
             im_cot_1621 = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_cot_1621, proj_plot, proj_data)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_cot,
@@ -1073,13 +991,13 @@ class Imagery:
         im_ctp_swir = np.ma.masked_where((np.isnan(im_ctp_swir) | (im_ctp_swir == 0)), im_ctp_swir)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_ctp_swir,
                             shading='nearest',
                             zorder=2,
-                            cmap=ctp_swir_cmap,
+                            cmap=plot_util.ctp_swir_cmap,
                             transform=proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) Cloud Phase (SWIR/COP) - ".format(instrument, satellite) + dt_title
@@ -1087,8 +1005,8 @@ class Imagery:
         ax00.set_extent(ccrs_views[mode]['view_extent'], proj_data)
 
         # create legend labels
-        for i in range(len(ctp_swir_cmap_ticklabels)):
-            patches_legend_swir.append(matplotlib.patches.Patch(color=ctp_swir_cmap_arr[i] , label=ctp_swir_cmap_ticklabels[i]))
+        for i in range(len(plot_util.ctp_swir_cmap_ticklabels)):
+            patches_legend_swir.append(matplotlib.patches.Patch(color=plot_util.ctp_swir_cmap_arr[i] , label=plot_util.ctp_swir_cmap_ticklabels[i]))
 
         ax00.legend(handles=patches_legend_swir, loc='upper center', bbox_to_anchor=(0.5, -0.05), facecolor='white',
                     ncol=len(patches_legend_swir), fancybox=True, shadow=False, frameon=False, prop={'size': 24})
@@ -1100,7 +1018,7 @@ class Imagery:
         y01 = ax01.pcolormesh(lon_2d, lat_2d, im_ctp_ir,
                     shading='nearest',
                     zorder=2,
-                    cmap=ctp_ir_cmap,
+                    cmap=plot_util.ctp_ir_cmap,
                     transform=proj_data)
         # ax01.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) Cloud Phase (IR) - ".format(instrument, satellite) + dt_title
@@ -1108,8 +1026,8 @@ class Imagery:
         ax01.set_extent(ccrs_views[mode]['view_extent'], proj_data
                         )
         # create legend labels
-        for i in range(len(ctp_ir_cmap_ticklabels)):
-            patches_legend_ir.append(matplotlib.patches.Patch(color=ctp_ir_cmap_arr[i] , label=ctp_ir_cmap_ticklabels[i]))
+        for i in range(len(plot_util.ctp_ir_cmap_ticklabels)):
+            patches_legend_ir.append(matplotlib.patches.Patch(color=plot_util.ctp_ir_cmap_arr[i] , label=plot_util.ctp_ir_cmap_ticklabels[i]))
 
         ax01.legend(handles=patches_legend_ir, loc='upper center', bbox_to_anchor=(0.5, -0.05), facecolor='white',
                     ncol=len(patches_legend_ir), fancybox=True, shadow=False, frameon=False, prop={'size': 24})
@@ -1154,21 +1072,21 @@ class Imagery:
             im_ctt = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_ctt, proj_plot, proj_data)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(mpl_style)
+        plt.style.use(plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         im_cth_binned = self.bin_cth_to_class(im_cth)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_cth_binned,
                             shading='nearest',
                             zorder=1,
-                            cmap=cth_cmap,
+                            cmap=plot_util.cth_cmap,
                             transform=proj_data)
 
         title = "{} ({}) Cloud Top Height - ".format(instrument, satellite) + dt_title
         self.add_ancillary(ax00, buoys, title, scale=1.4)
 
-        for i in range(len(cth_cmap_ticklabels)):
-            patches_legend_cth.append(matplotlib.patches.Patch(color=cth_cmap_arr[i] , label=cth_cmap_ticklabels[i]))
+        for i in range(len(plot_util.cth_cmap_ticklabels)):
+            patches_legend_cth.append(matplotlib.patches.Patch(color=plot_util.cth_cmap_arr[i] , label=plot_util.cth_cmap_ticklabels[i]))
 
         ax00.legend(handles=patches_legend_cth, loc='upper center', bbox_to_anchor=(0.5, -0.05), facecolor='white',
                     ncol=len(patches_legend_cth), fancybox=True, shadow=False, frameon=False, prop={'size': 24})
@@ -1201,7 +1119,7 @@ class Imagery:
         title = "{} ({}) Cloud Top Temperature - ".format(instrument, satellite) + dt_title
         self.add_ancillary(ax01, buoys, title, scale=1.4)
         for i in range(len(ctt_cmap_ticklabels)):
-            patches_legend_ctt.append(matplotlib.patches.Patch(color=ctt_cmap_arr[i] , label=ctt_cmap_ticklabels[i]))
+            patches_legend_ctt.append(matplotlib.patches.Patch(color=plot_util.ctt_cmap_arr[i] , label=ctt_cmap_ticklabels[i]))
 
         ax01.legend(handles=patches_legend_ctt, loc='upper center', bbox_to_anchor=(0.5, -0.025), facecolor='white',
             ncol=int(len(patches_legend_ctt)/2), fancybox=True, shadow=False, frameon=False, prop={'size': 24},
