@@ -18,6 +18,7 @@ This repository is the processing pipeline for visualizing satellite imagery in 
 conda create --name arcsix --file conda_requirements.txt
 conda activate arcsix
 pip3 install -r pip_requirements.txt
+git clone https://github.com/vikasnataraja/arcsix-satellite.git && cd arcsix-satellite
 ```
 Tested with Python 3.10.14 on RedHat Enterprise Linux 8. 
 
