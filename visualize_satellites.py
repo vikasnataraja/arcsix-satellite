@@ -454,7 +454,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, metadata, geojson_fpa
                                     extent=extent,
                                     f03=f_geo,
                                     keep_dims=True,
-                                    bands=["M05", "M07", "M02", "M04", "M10", "M11", "M09", "M15"])
+                                    bands=["M05", "M07", "M03", "M04", "M10", "M11", "M09", "M15"])
             else:
                 print("\nOnly VIIRS and MODIS products are supported. Instead, file was: {}\n".format(ref_file))
                 continue
