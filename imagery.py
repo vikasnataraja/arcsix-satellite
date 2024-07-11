@@ -18,7 +18,8 @@ from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 from util import plot_util
 
 
-SZA_LIMIT = 81.36
+# SZA_LIMIT = 81.36
+import util.constants
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)

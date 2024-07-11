@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 from util.arctic_gridding_utils import modis_l1b, modis_03, modis_l2, viirs_l1b, viirs_03
 from util.arctic_gridding_utils import within_range, get_satellite_group_name
+import util.constants
 import datetime
 from tqdm import tqdm
 from imagery import Imagery
@@ -13,9 +14,9 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-START_TIME = datetime.datetime.now()
-EARTH_RADIUS = 6371.009
-SZA_LIMIT = 81.36
+# moved to util.constants; will be removed at a later version
+# EARTH_RADIUS = 6371.009
+# SZA_LIMIT = 81.36
 
 
 ################################################################################################################
@@ -438,7 +439,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, metadata, geojson_fpa
             continue
 
         sza_2d = f_geo.data['sza']['data'].T
-        sza_2d[sza_2d > SZA_LIMIT] = SZA_LIMIT
+        sza_2d[sza_2d > util.constants.SZA_LIMIT] = util.constants.SZA_LIMIT
 
         # reflectance file
         try:
@@ -547,6 +548,7 @@ def get_extent(fdir):
 
 
 if __name__ == "__main__":
+    START_TIME = datetime.datetime.now()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--fdir",  default=None,  type=str, help="Path to directory containing raw MODIS/VIIRS HDF files")
@@ -585,9 +587,9 @@ if __name__ == "__main__":
 
     if args.start_date is None or args.end_date is None:
 
-            # start_dt_hhmm, end_dt_hhmm = get_start_end_dates_metadata(fdir)
+
             start_dt_hhmm, end_dt_hhmm = get_start_end_dates_metadata(subdirs[-1])
-            # start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
+
             if ((end_dt_hhmm - start_dt_hhmm) > datetime.timedelta(hours=3)):
                 start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=3)
                 print("Message [visualize_satellites]: Start time and end times were too far apart...limiting to 3 hour gap.")
@@ -624,9 +626,9 @@ if __name__ == "__main__":
 
     outdir_dt =  start_dt_hhmm_str + '_' + end_dt_hhmm_str
 
-    print("=====================================================================")
-    print("Message [visualize_satellites]: Start datetime: {}, End datetime: {}".format(start_dt_hhmm_str, end_dt_hhmm_str))
-    print("=====================================================================")
+    print("==============================================================================================")
+    print("Message [visualize_satellites]: Start: {}, End: {}".format(start_dt_hhmm_str, end_dt_hhmm_str))
+    print("==============================================================================================")
 
     if (args.ndir_recent is not None) and (len(subdirs) >= args.ndir_recent):
         subdirs = subdirs[-args.ndir_recent:]
@@ -659,4 +661,4 @@ if __name__ == "__main__":
     print("Finished!")
 
     END_TIME = datetime.datetime.now()
-    print('Time taken to execute:', END_TIME - START_TIME)
+    print('Time taken to execute {}: {}'.format(os.path.basename(__file__), END_TIME - START_TIME))
