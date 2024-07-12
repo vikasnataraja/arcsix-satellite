@@ -131,7 +131,7 @@ def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, metadata, geojson_
 
     f03, fcld_l2 = get_modis_noref_geo_cld_opt(fdir)
     if (len(f03) == 0) or (len(fcld_l2) == 0):
-        print("\nMessage [visualize_satellites]: Could not find any common ref + cld products for MODIS\n")
+        print("\nMessage [modis_cld_geo]: Could not find any common ref + cld products for MODIS\n")
         return 0
 
     n_obs = len(f03)
@@ -161,8 +161,8 @@ def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, metadata, geojson_
     # purposely change start date to account for latency but not affect filenames
     start_dt = start_dt - datetime.timedelta(hours=2)
     start_dt_str = start_dt.strftime('%Y-%m-%d-%H%M')
-    print("Message [visualize_satellites]: Start datetime:{}, End datetime: {}".format(start_dt_str, end_dt_str))
-    print("Warning [visualize_satellites]: Start datetime was changed to catch more data and account for latency")
+    print("Message [modis_cld_geo]: Start datetime:{}, End datetime: {}".format(start_dt_str, end_dt_str))
+    print("Warning [modis_cld_geo]: Start datetime was changed to catch more data and account for latency")
 
     for i in tqdm(range(n_obs)):
         try:
@@ -245,25 +245,6 @@ def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, metadata, geojson_
             _ = arcsix_l2.plot_cloud_top(lon_2d=lon2d_5km, lat_2d=lat2d_5km, cth=cth, ctt=ctt,
                                          satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath,
                                          buoys=buoys, mode=mode)
-
-            # save data
-            # g1 = f1.create_group(group_name)
-            # _ = g1.create_dataset('ctp',         data=sdata['ctp'].T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('ctp_ir',      data=sdata['ctp_ir'].T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('ctt',         data=sdata['ctt'].T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('cth',         data=sdata['cth'].T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('cot_2d',      data=sdata['cot_2d'].T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('cwp_2d',      data=sdata['cwp_2d'].T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('cot_1621',    data=sdata['cot_1621'].T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('cwp_1621',    data=sdata['cwp_1621'].T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('lon2d_1km',   data=lon2d_1km.T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('lat2d_1km',   data=lat2d_1km.T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('lon2d_5km',   data=lon2d_5km.T, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('lat2d_5km',   data=lat2d_5km.T, compression='gzip', compression_opts=9)
-            # # _ = g1.create_dataset('lon_1d',      data=lon_1d, compression='gzip', compression_opts=9)
-            # # _ = g1.create_dataset('lat_1d',      data=lat_1d, compression='gzip', compression_opts=9)
-            # _ = g1.create_dataset('metadata',    data=metadata)
-            # _ = g1.create_dataset('satellite',   data=satellite)
 
             valid_count += 1
 
@@ -553,22 +534,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--fdir",  default=None,  type=str, help="Path to directory containing raw MODIS/VIIRS HDF files")
     parser.add_argument("--outdir", type=str, default=None, help="Path to directory where images will be saved")
-    parser.add_argument("--start_date", type=str, metavar='', default=None,
-                        help='The start date of the range of dates for which you would like to grid data. '\
-                        'Use yyyymmdd or yyyymmddhhmm format.\n'\
-                        'Example: --start_date 20210404\n \n')
-    parser.add_argument("--end_date", type=str, metavar='', default=None,
-                        help='The end date of the range of dates for which you would like to grid data. '\
-                        'Use yyyymmdd or yyyymmddhhmm format.\n'\
-                        'Example: --end_date 20210414\n \n')
     parser.add_argument('--ndir_recent', type=int, metavar='', default=None, help='Time range in terms of sub-directories. For example, if --ndir_recent 5, then the 5 most recent (based on filenames) datetime ranges will be used to create data')
-    parser.add_argument('--max_hours', type=int, metavar='', default=None, help='Maximum time range in hours. For example, if --max_hours 5, then the 5 most recent hours from the last available satellite time are used')
+    parser.add_argument('--max_hours', type=int, metavar='', default=3, help='Maximum time range in hours. For example, if --max_hours 5, then the 5 most recent hours from the last available satellite time are used')
     parser.add_argument("--nrt", action='store_true', help="Enable --nrt to process VIIRS L1b and 03 products, and MODIS L1b, 03, and clds")
+    parser.add_argument("--read_metadata", action='store_true', help="Enable --read_metadata to use dates from the metadata file")
     parser.add_argument('--geojson', type=str, metavar='',
                         help='Path to a geoJSON file containing the extent of interest coordinates\n'\
                         'Example:  --geojson my/path/to/geofile.json\n \n')
     parser.add_argument('--buoys', type=str, metavar='', default=None, help='Path to the JSON file containing URLs to the buoys csv data')
-    parser.add_argument('--mode', type=str, metavar='', default=None, help='One of "baffin", "lincoln", or "platypus" ')
+    parser.add_argument('--mode', type=str, metavar='', default='lincoln', help='One of "baffin", "lincoln", or "platypus" ')
     args = parser.parse_args()
 
     if not os.path.exists(args.outdir):
@@ -585,36 +559,12 @@ if __name__ == "__main__":
 
     subdirs = sorted(subdirs)
 
-    if args.start_date is None or args.end_date is None:
+    start_dt_hhmm, end_dt_hhmm = get_start_end_dates_metadata(subdirs[-1])
 
+    if ((end_dt_hhmm - start_dt_hhmm) > datetime.timedelta(hours=args.max_hours)) or ((end_dt_hhmm - start_dt_hhmm) < datetime.timedelta(hours=2)):
+        start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
+        print("Message [visualize_satellites]: Start time and end times were too far apart or not far enough...limiting to {} hour gap.".format(args.max_hours))
 
-            start_dt_hhmm, end_dt_hhmm = get_start_end_dates_metadata(subdirs[-1])
-
-            if ((end_dt_hhmm - start_dt_hhmm) > datetime.timedelta(hours=3)):
-                start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=3)
-                print("Message [visualize_satellites]: Start time and end times were too far apart...limiting to 3 hour gap.")
-
-    elif args.start_date is not None and args.end_date is not None:
-        if args.max_hours is None:
-            # start at 0 UTC unless specified by user
-            start_hr = 0
-            start_min = 0
-            if len(args.start_date) == 12:
-                start_hr, start_min = int(args.start_date[8:10]), int(args.start_date[10:12])
-
-            start_dt_hhmm  = datetime.datetime(int(args.start_date[:4]), int(args.start_date[4:6]), int(args.start_date[6:8]), start_hr, start_min)
-
-            # end at 2359 UTC unless specified by user
-            end_hr = 23
-            end_min = 59
-            if len(args.end_date) == 12:
-                end_hr, end_min = int(args.end_date[8:10]), int(args.end_date[10:12])
-
-            end_dt_hhmm  = datetime.datetime(int(args.end_date[:4]), int(args.end_date[4:6]), int(args.end_date[6:8]), end_hr, end_min)
-
-        else:
-            _, end_dt_hhmm = get_start_end_dates_metadata(subdirs[-1])
-            start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
 
     else:
         print("Something went wrong with start and end dates.\n")
