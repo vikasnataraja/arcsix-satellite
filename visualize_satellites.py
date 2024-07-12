@@ -570,14 +570,8 @@ if __name__ == "__main__":
 
     start_dt_hhmm, end_dt_hhmm = get_start_end_dates_metadata(subdirs[-1])
 
-    if ((end_dt_hhmm - start_dt_hhmm) > datetime.timedelta(hours=args.max_hours)) or ((end_dt_hhmm - start_dt_hhmm) < datetime.timedelta(hours=2)):
-        start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
-        print("Message [visualize_satellites]: Start time and end times were too far apart or not far enough...limiting to {} hour gap.".format(args.max_hours))
-
-
-    else:
-        print("Something went wrong with start and end dates.\n")
-        sys.exit()
+    start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
+    print("Message [visualize_satellites]: Start time and end times were too far apart or not far enough...limiting to {} hour gap.".format(args.max_hours))
 
 
     start_dt_hhmm_str = start_dt_hhmm.strftime('%Y-%m-%d-%H%M')

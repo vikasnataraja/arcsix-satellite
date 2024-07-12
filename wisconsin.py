@@ -24,6 +24,7 @@ import matplotlib
 
 import util.constants
 import util.wisc_util
+from visualize_satellites import get_start_end_dates_metadata
 
 
 class WisconsinDownload:
@@ -493,7 +494,8 @@ def run(args):
         # ==================================================================================================================
         # Save metadata but if file exists, delete it
         if os.path.isfile(os.path.join(fdir_out_dt, 'metadata.txt')):
-            print('Message [sdown]: metadata.txt file was removed from {}'.format(os.path.join(fdir_out_dt, 'metadata.txt')))
+            exist_start_dt, exist_end_dt = get_start_end_dates_metadata(fdir_out_dt)
+            print('Message [sdown]: metadata.txt file will be removed from {}'.format(os.path.join(fdir_out_dt, 'metadata.txt')))
             os.remove(os.path.join(fdir_out_dt, 'metadata.txt'))
 
 
@@ -517,8 +519,11 @@ def run(args):
 
         # Save metadata start and end dates
         oldest_dt, recent_dt = wisc.report_times_for_metadata()
+        if exist_end_dt > recent_dt:
+            recent_dt = exist_end_dt
+
         if oldest_dt == recent_dt:
-            oldest_dt = recent_dt - datetime.timedelta(hours=3)
+            oldest_dt = recent_dt - datetime.timedelta(hours=args.latest_nhours)
 
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "a") as f:
             f.write('Start_Date: {}\n'.format(oldest_dt.strftime('%Y-%m-%d-%H%M')))
