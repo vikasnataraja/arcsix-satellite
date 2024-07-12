@@ -448,6 +448,13 @@ class WisconsinDownload:
                 return 0
 
 
+    def report_times_for_metadata(self):
+        if len(self.df) == 0:
+            return self.start_time, self.end_time
+
+        return min(self.df['begin_time']), max(self.df['begin_time'])
+
+
     def save_df_to_file(self, fpath):
         extension = fpath.split('.')[-1]
         if extension != 'csv':
@@ -467,6 +474,7 @@ def run(args):
     product_counter = {} # to count number of products downloaded
 
     for date_x in date_list: # download products date by date
+
         fdir_out_dt = os.path.join(args.fdir, date_x.strftime('%Y-%m-%d')) # save files in dirs with dates specified
         if not os.path.exists(fdir_out_dt):
             os.makedirs(fdir_out_dt)
@@ -495,6 +503,12 @@ def run(args):
 
         for product in args.products:
             product_counter[product] = wisc.download_asipscli_file(product=product, outdir=fdir_out_dt)
+
+        # Save metadata start and end dates
+        oldest_dt, recent_dt = wisc.report_times_for_metadata()
+        with open(os.path.join(fdir_out_dt, "metadata.txt"), "a") as f:
+            f.write('Start_Date: {}\n'.format(oldest_dt.strftime('%Y-%m-%d-%H%M')))
+            f.write('End_Date:   {}\n'.format(recent_dt.strftime('%Y-%m-%d-%H%M')))
 
     return product_counter
 
