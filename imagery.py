@@ -290,6 +290,7 @@ class Imagery:
             spine.set_edgecolor('black')
             spine.set_linewidth(1)
 
+        # visualize buoys
         if buoys is not None:
             dt, lons, lats = self.get_buoy_data(buoys)
 
@@ -302,9 +303,9 @@ class Imagery:
                 ax.scatter(lons[bid][-1], lats[bid][-1], marker='*', s=100, edgecolor='black', facecolor=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=1)
 
                 text = str(bid)
-                x_offset, y_offset = -2.5, -0.02 # offset for text
+                x_offset, y_offset = 1.5, -0.2 # offset for text
                 if text == "J":
-                    x_offset, y_offset = 1.5, -0.1 # buoy J is drifting east, others are drifting west
+                    x_offset, y_offset = 1.5, -0.1 # buoy J is drifting east, others are drifting west for the most part
                 ax.text(lons[bid][-1] + x_offset, lats[bid][-1] + y_offset, text, ha="center", va="center", transform=util.plot_util.proj_data, color=colors[i],
                         fontsize=10, fontweight="bold", zorder=2)
 
