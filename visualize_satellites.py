@@ -127,7 +127,7 @@ def get_modis_noref_geo_cld_opt(fdir):
     return f03, fcld_l2
 
 
-def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, metadata, geojson_fpath, buoys, start_dt, end_dt, mode):
+def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buoys, start_dt, end_dt, mode):
 
     f03, fcld_l2 = get_modis_noref_geo_cld_opt(fdir)
     if (len(f03) == 0) or (len(fcld_l2) == 0):
@@ -227,24 +227,24 @@ def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, metadata, geojson_
             # satellite name
             satellite, group_name = get_satellite_group_name(acq_dt, geo_file, encode=False)
             # satellite = np.array(satellite.encode("utf-8"), dtype=utf8_type)
+            if 'uwssec' in geo_file.lower():
+                data_source = 'UWisc SSEC'
+            else:
+                data_source = 'NASA LAADS DAAC'
 
-            arcsix_l2 = Imagery() # initialize class object
+            arcsix_l2 = Imagery(data_source=data_source,
+                                     satellite=satellite,
+                                     acq_dt=group_name,
+                                     outdir=outdir,
+                                     geojson_fpath=geojson_fpath,
+                                     buoys=buoys,
+                                     mode=mode) # initialize class object
 
-            _ = arcsix_l2.plot_liquid_water_paths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp=ctp, cwp=cwp_2d, cwp_1621=cwp_1621,
-                                                  satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath,
-                                                  buoys=buoys, mode=mode)
-            _ = arcsix_l2.plot_ice_water_paths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp=ctp, cwp=cwp_2d, cwp_1621=cwp_1621,
-                                               satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath,
-                                               buoys=buoys, mode=mode)
-            _ = arcsix_l2.plot_optical_depths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, cot=cot_2d, cot_1621=cot_1621,
-                                              satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath,
-                                              buoys=buoys, mode=mode)
-            _ = arcsix_l2.plot_cloud_phase(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp_swir=ctp, ctp_ir=ctp_ir,
-                                           satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath,
-                                           buoys=buoys, mode=mode)
-            _ = arcsix_l2.plot_cloud_top(lon_2d=lon2d_5km, lat_2d=lat2d_5km, cth=cth, ctt=ctt,
-                                         satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath,
-                                         buoys=buoys, mode=mode)
+            _ = arcsix_l2.plot_liquid_water_paths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp=ctp, cwp=cwp_2d, cwp_1621=cwp_1621)
+            _ = arcsix_l2.plot_ice_water_paths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp=ctp, cwp=cwp_2d, cwp_1621=cwp_1621)
+            _ = arcsix_l2.plot_optical_depths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, cot=cot_2d, cot_1621=cot_1621)
+            _ = arcsix_l2.plot_cloud_phase(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp_swir=ctp, ctp_ir=ctp_ir)
+            _ = arcsix_l2.plot_cloud_top(lon_2d=lon2d_5km, lat_2d=lat2d_5km, cth=cth, ctt=ctt)
 
             valid_count += 1
 
@@ -333,7 +333,7 @@ def get_modis_viirs_ref_geo(fdir):
     return fref, f03
 
 
-def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, metadata, geojson_fpath, buoys, start_dt, end_dt, mode):
+def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys, start_dt, end_dt, mode):
 
     fref, f03 = get_modis_viirs_ref_geo(fdir)
     if (len(fref) == 0) or (len(f03) == 0):
@@ -457,22 +457,32 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, metadata, geojson_fpa
             # satellite name
             satellite, group_name = get_satellite_group_name(acq_dt, geo_file, encode=False)
             # satellite = np.array(satellite.encode("utf-8"), dtype=utf8_type)
+            if 'uwssec' in geo_file.lower():
+                data_source = 'UWisc SSEC'
+            else:
+                data_source = 'NASA LAADS DAAC'
 
-            arcsix_imagery = Imagery() # initialize class object
+            arcsix_imagery = Imagery(data_source=data_source,
+                                     satellite=satellite,
+                                     acq_dt=group_name,
+                                     outdir=outdir,
+                                     geojson_fpath=geojson_fpath,
+                                     buoys=buoys,
+                                     mode=mode) # initialize class object
 
-            _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d, satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath, buoys=buoys, mode=mode)
+            _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d)
 
-            _ = arcsix_imagery.create_false_color_721_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_2130, green=ref_860, blue=ref_650, sza=sza_2d, satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath, buoys=buoys, mode=mode)
+            _ = arcsix_imagery.create_false_color_721_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_2130, green=ref_860, blue=ref_650, sza=sza_2d)
 
             if satellite != 'Aqua': # band 6 at 1640 is broken for Aqua
 
-                _ = arcsix_imagery.create_false_color_367_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_470, green=ref_1640, blue=ref_2130, sza=sza_2d, satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath, buoys=buoys, mode=mode)
+                _ = arcsix_imagery.create_false_color_367_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_470, green=ref_1640, blue=ref_2130, sza=sza_2d)
 
                 # 1.38-1.6-2.1 reflectance
-                _ = arcsix_imagery.create_false_color_cirrus_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_1380, green=ref_1640, blue=ref_2130, sza=sza_2d, satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath, buoys=buoys, mode=mode)
+                _ = arcsix_imagery.create_false_color_cirrus_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_1380, green=ref_1640, blue=ref_2130, sza=sza_2d)
 
                 # 11micron-1.6-2.1 radiance
-                _ = arcsix_imagery.create_false_color_ir_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=rad_11000, green=rad_1640, blue=rad_2130, satellite=satellite, acq_dt=group_name, outdir=outdir, geojson_fpath=geojson_fpath, buoys=buoys, mode=mode)
+                _ = arcsix_imagery.create_false_color_ir_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=rad_11000, green=rad_1640, blue=rad_2130)
 
             valid_count += 1
 
@@ -537,7 +547,6 @@ if __name__ == "__main__":
     parser.add_argument('--ndir_recent', type=int, metavar='', default=None, help='Time range in terms of sub-directories. For example, if --ndir_recent 5, then the 5 most recent (based on filenames) datetime ranges will be used to create data')
     parser.add_argument('--max_hours', type=int, metavar='', default=3, help='Maximum time range in hours. For example, if --max_hours 5, then the 5 most recent hours from the last available satellite time are used')
     parser.add_argument("--nrt", action='store_true', help="Enable --nrt to process VIIRS L1b and 03 products, and MODIS L1b, 03, and clds")
-    parser.add_argument("--read_metadata", action='store_true', help="Enable --read_metadata to use dates from the metadata file")
     parser.add_argument('--geojson', type=str, metavar='',
                         help='Path to a geoJSON file containing the extent of interest coordinates\n'\
                         'Example:  --geojson my/path/to/geofile.json\n \n')
@@ -592,15 +601,15 @@ if __name__ == "__main__":
 
         outdir = args.outdir
 
-        metadata = np.array([year, month, date, hour, minute, sec, extent[0], extent[1], extent[2], extent[3]])
+        # metadata = np.array([year, month, date, hour, minute, sec, extent[0], extent[1], extent[2], extent[3]])
         # lon_1d, lat_1d = calc_lonlat_arr(west=extent[0], south=extent[2],
         #                                 width=args.width, height=args.height,
         #                                 resolution=args.resolution)
 
         ret = 0
         if args.nrt:
-            ret += save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, metadata, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, mode=args.mode)
-            ret += save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, metadata, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, mode=args.mode)
+            ret += save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, mode=args.mode)
+            ret += save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, mode=args.mode)
 
         if ret == 0:
             manual_list.append(fdir)

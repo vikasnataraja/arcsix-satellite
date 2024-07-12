@@ -15,11 +15,8 @@ import matplotlib.ticker as mticker
 import cartopy.crs as ccrs
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 
-from util import plot_util
-
-
-# SZA_LIMIT = 81.36
-import util.constants
+import util.plot_util
+# import util.constants
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -27,9 +24,26 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 class Imagery:
 
-    def __init__(self, verbose=False):
+    def __init__(self,
+                 data_source,
+                 satellite,
+                 acq_dt,
+                 outdir,
+                 geojson_fpath,
+                 buoys,
+                 mode,
+                 verbose=False):
 
-        self.verbose = verbose
+        self.data_source   = data_source
+        self.satellite     = satellite
+        self.acq_dt        = acq_dt
+        self.outdir        = outdir
+        self.geojson_fpath = geojson_fpath
+        self.buoys         = buoys
+        self.mode          = mode
+        self.verbose       = verbose
+
+        self.get_instrument()
 
 
     def scale_table(self, arr):
@@ -106,15 +120,13 @@ class Imagery:
         return np.stack([red_mask, green_mask, blue_mask], axis=-1)
 
 
-    def get_instrument(self, satellite):
-        if (satellite == 'Aqua') or (satellite == 'Terra'):
-            instrument = 'MODIS'
-        elif (satellite == 'Suomi-NPP') or (satellite == 'NOAA-20/JPSS-1') or (satellite == 'NOAA-21/JPSS-2'):
-            instrument = 'VIIRS'
+    def get_instrument(self):
+        if (self.satellite == 'Aqua') or (self.satellite == 'Terra'):
+            self.instrument = 'MODIS'
+        elif (self.satellite == 'Suomi-NPP') or (self.satellite == 'NOAA-20/JPSS-1') or (self.satellite == 'NOAA-21/JPSS-2'):
+            self.instrument = 'VIIRS'
         else:
-            instrument = 'Unknown'
-
-        return instrument
+            self.instrument = 'Unknown'
 
 
     def get_buoy_data(self, json_fpath, API_KEY="kU7vw3YBcIvnxqTH8DlDeR08QTTfNYiZ", days=7, download_threshold_hrs=6, force_download=False):
@@ -228,6 +240,12 @@ class Imagery:
         return masked_dat
 
 
+    def create_metadata(self):
+        now = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        metadata = {'system': os.uname()[1], 'created': now, 'data_source': self.data_source, 'author': 'Vikas Nataraja'}
+        return metadata
+
+
     def add_ancillary(self, ax, buoys=None, title=None, scale=1):
         # ax.scatter(cfs_alert[0], cfs_alert[1], marker='*', s=30, color='white', transform=proj_data, zorder=2)
         # ax.text(cfs_alert[0]-0.5, cfs_alert[1]-0.5, "Stn. Alert", ha="center", color='white', transform=proj_data,
@@ -256,7 +274,7 @@ class Imagery:
 
         gl = ax.gridlines(linewidth=1.5, color='darkgray',
                     draw_labels=True, zorder=2, alpha=1, linestyle=(0, (1, 1)),
-                    x_inline=False, y_inline=True, crs=proj_data)
+                    x_inline=False, y_inline=True, crs=util.plot_util.proj_data)
 
         gl.xformatter = LongitudeFormatter()
         gl.yformatter = LatitudeFormatter()
@@ -279,15 +297,15 @@ class Imagery:
             buoy_ids = list(dt.keys())
             colors = plt.cm.brg(np.linspace(0, 1, len(buoy_ids)))
             for i, bid in enumerate(buoy_ids):
-                ax.scatter(lons[bid][0], lats[bid][0], marker='s', s=30, edgecolor='black', facecolor=colors[i], transform=proj_data, zorder=2, alpha=0.7)
-                ax.plot(lons[bid], lats[bid], linewidth=1.5, color=colors[i], transform=proj_data, zorder=2, alpha=0.7)
-                ax.scatter(lons[bid][-1], lats[bid][-1], marker='*', s=100, edgecolor='black', facecolor=colors[i], transform=proj_data, zorder=2, alpha=1)
+                ax.scatter(lons[bid][0], lats[bid][0], marker='s', s=30, edgecolor='black', facecolor=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=0.7)
+                ax.plot(lons[bid], lats[bid], linewidth=1.5, color=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=0.7)
+                ax.scatter(lons[bid][-1], lats[bid][-1], marker='*', s=100, edgecolor='black', facecolor=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=1)
 
                 text = str(bid)
                 x_offset, y_offset = -2.5, -0.02 # offset for text
                 if text == "J":
                     x_offset, y_offset = 1.5, -0.1 # buoy J is drifting east, others are drifting west
-                ax.text(lons[bid][-1] + x_offset, lats[bid][-1] + y_offset, text, ha="center", va="center", transform=proj_data, color=colors[i],
+                ax.text(lons[bid][-1] + x_offset, lats[bid][-1] + y_offset, text, ha="center", va="center", transform=util.plot_util.proj_data, color=colors[i],
                         fontsize=10, fontweight="bold", zorder=2)
 
 
@@ -344,22 +362,21 @@ class Imagery:
 
 
 
-    def create_false_color_721_imagery(self, lon_2d, lat_2d, red, green, blue, sza, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def create_false_color_721_imagery(self, lon_2d, lat_2d, red, green, blue, sza):
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "false_color_721")
+        save_dir = os.path.join(self.outdir, "false_color_721")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(acq_dt) + "Z"
-        instrument = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
@@ -371,46 +388,46 @@ class Imagery:
 
         img_fci = np.stack([red, green, blue], axis=-1)
 
-        if geojson_fpath is not None:
-            img_fci = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            img_fci = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
         ax.pcolormesh(lon_2d, lat_2d, img_fci,
                         shading='nearest',
                         zorder=2,
-                        transform=proj_data)
+                        transform=util.plot_util.proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) False Color (7-2-1) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax, buoys=buoys, title=title)
+        title = "{} ({}) False Color (7-2-1) - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax, buoys=self.buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
-        ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
 
 
-    def create_false_color_367_imagery(self, lon_2d, lat_2d, red, green, blue, sza, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def create_false_color_367_imagery(self, lon_2d, lat_2d, red, green, blue, sza):
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "false_color_367")
+        save_dir = os.path.join(self.outdir, "false_color_367")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(acq_dt) + "Z"
-        instrument = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
@@ -422,46 +439,46 @@ class Imagery:
 
         img_fci = np.stack([red, green, blue], axis=-1)
 
-        if geojson_fpath is not None:
-            img_fci = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            img_fci = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
         ax.pcolormesh(lon_2d, lat_2d, img_fci,
                         shading='nearest',
                         zorder=2,
-                        transform=proj_data)
+                        transform=util.plot_util.proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) False Color (3-6-7) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax, buoys=buoys, title=title)
+        title = "{} ({}) False Color (3-6-7) - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax, buoys=self.buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
-        ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
 
 
-    def create_true_color_imagery(self, lon_2d, lat_2d, red, green, blue, sza, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def create_true_color_imagery(self, lon_2d, lat_2d, red, green, blue, sza):
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "true_color")
+        save_dir = os.path.join(self.outdir, "true_color")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(acq_dt) + "Z"
-        instrument = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
@@ -476,11 +493,11 @@ class Imagery:
         rgb      = np.ma.masked_array(rgb, mask=rgb_mask)
         # rgb = np.interp(rgb, (np.nanpercentile(rgb, 1), np.nanpercentile(rgb, 99)), (0, 1))
 
-        if geojson_fpath is not None:
-            rgb = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, rgb, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            rgb = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, rgb, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -488,35 +505,35 @@ class Imagery:
                         shading='nearest',
                         zorder=2,
                         # vmin=0., vmax=1.,
-                        transform=proj_data)
+                        transform=util.plot_util.proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) True Color - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax, buoys=buoys, title=title)
+        title = "{} ({}) True Color - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax, buoys=self.buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
-        ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
 
 
-    def create_false_color_cirrus_imagery(self, lon_2d, lat_2d, red, green, blue, sza, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def create_false_color_cirrus_imagery(self, lon_2d, lat_2d, red, green, blue, sza):
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "false_color_cirrus")
+        save_dir = os.path.join(self.outdir, "false_color_cirrus")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(acq_dt) + "Z"
-        instrument = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
@@ -528,90 +545,92 @@ class Imagery:
 
         img_fci = np.stack([red, green, blue], axis=-1)
 
-        if geojson_fpath is not None:
-            img_fci = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            img_fci = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
         ax.pcolormesh(lon_2d, lat_2d, img_fci,
                         shading='nearest',
                         zorder=2,
-                        transform=proj_data)
+                        transform=util.plot_util.proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
-        if instrument == 'MODIS':
-            title = "{} ({}) False Color (1.38-1.64-2.13$\;\mu m$) - ".format(instrument, satellite) + dt_title
+        if self.instrument == 'MODIS':
+            title = "{} ({}) False Color (1.38-1.64-2.13$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
         else:
-            title = "{} ({}) False Color (1.38-1.61-2.25$\;\mu m$) - ".format(instrument, satellite) + dt_title
+            title = "{} ({}) False Color (1.38-1.61-2.25$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
 
-        self.add_ancillary(ax, buoys=buoys, title=title)
+        self.add_ancillary(ax, buoys=self.buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
-        ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
 
 
-    def create_false_color_ir_imagery(self, lon_2d, lat_2d, red, green, blue, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def create_false_color_ir_imagery(self, lon_2d, lat_2d, red, green, blue):
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "false_color_ir")
+        save_dir = os.path.join(self.outdir, "false_color_ir")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(acq_dt) + "Z"
-        instrument = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
             return 0
 
+        # radiance so no cosine sza correction needed
         red    = self.preprocess_band(red,   sza=None)
         green  = self.preprocess_band(green, sza=None)
         blue   = self.preprocess_band(blue,  sza=None)
 
         img_fci = np.stack([red, green, blue], axis=-1)
 
-        if geojson_fpath is not None:
-            img_fci = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            img_fci = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
         ax.pcolormesh(lon_2d, lat_2d, img_fci,
                         shading='nearest',
                         zorder=2,
-                        transform=proj_data)
+                        transform=util.plot_util.proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
-        if instrument == 'MODIS':
-            title = "{} ({}) False Color (11.03-1.64-2.13$\;\mu m$) - ".format(instrument, satellite) + dt_title
+        if self.instrument == 'MODIS':
+            title = "{} ({}) False Color (11.03-1.64-2.13$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
         else:
-            title = "{} ({}) False Color (10.76-1.61-2.25$\;\mu m$) - ".format(instrument, satellite) + dt_title
+            title = "{} ({}) False Color (10.76-1.61-2.25$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
 
-        self.add_ancillary(ax, buoys=buoys, title=title)
+        self.add_ancillary(ax, buoys=self.buoys, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
-        ax.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
 
 
-    def plot_liquid_water_paths(self, lon_2d, lat_2d, ctp, cwp, cwp_1621, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def plot_liquid_water_paths(self, lon_2d, lat_2d, ctp, cwp, cwp_1621):
 
         #     " The values in this SDS are set to mean the following:                              \n",
         #     " 0 -- cloud mask undetermined                                                       \n",
@@ -620,20 +639,19 @@ class Imagery:
         #     " 3 -- ice cloud                                                                     \n",
         #     " 4 -- undetermined phase cloud (but retrieval is attempted as  liquid water)        \n",
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "water_path")
+        save_dir = os.path.join(self.outdir, "water_path")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title  = self.doy_2_date_str(acq_dt) + "Z"
-        instrument = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title  = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
@@ -666,31 +684,31 @@ class Imagery:
             im_lwp[im_lwp > vmax]           = vmax
             im_lwp_1621[im_lwp_1621 > vmax] = vmax
             cbar_ticks = np.linspace(0, vmax, 5, dtype='int')
-            cmap = plot_util.arctic_cloud_cmap
+            cmap = util.plot_util.arctic_cloud_cmap
             extend = 'max'
         else:
             cbar_ticks = np.linspace(0, np.nanmax([im_lwp, im_lwp_1621]), 5, dtype='int')
-            cmap = plot_util.arctic_cloud_alt_cmap
+            cmap = util.plot_util.arctic_cloud_alt_cmap
             extend = 'neither'
 
-        if geojson_fpath is not None:
-            im_lwp      = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_lwp, proj_plot, proj_data)
-            im_lwp_1621 = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_lwp_1621, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            im_lwp      = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_lwp, proj_plot, util.plot_util.proj_data)
+            im_lwp_1621 = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_lwp_1621, proj_plot, util.plot_util.proj_data)
 
         ##############################################################
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_lwp,
                             shading='nearest',
                             zorder=2,
                             cmap=cmap,
-                            transform=proj_data)
+                            transform=util.plot_util.proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) LWP - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
+        title = "{} ({}) LWP - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y00, ax=ax00, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -698,7 +716,7 @@ class Imagery:
         cbar.ax.tick_params(length=0, labelsize=24)
         cbar.outline.set_edgecolor('black')
         cbar.outline.set_linewidth(1)
-        ax00.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax00.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         ax00.set_aspect(1.25)
 
         ##############################################################
@@ -708,10 +726,10 @@ class Imagery:
                         shading='nearest',
                         zorder=1,
                         cmap=cmap,
-                        transform=proj_data)
+                        transform=util.plot_util.proj_data)
         # ax01.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) LWP (1621) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
+        title = "{} ({}) LWP (1621) - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y01, ax=ax01, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -719,18 +737,19 @@ class Imagery:
         cbar.ax.tick_params(length=0, labelsize=24)
         cbar.outline.set_edgecolor('black')
         cbar.outline.set_linewidth(1)
-        ax01.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax01.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         ax01.set_aspect(1.25)
 
         ##############################################################
 
         fig.subplots_adjust(wspace=0.1)
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
 
 
-    def plot_ice_water_paths(self, lon_2d, lat_2d, ctp, cwp, cwp_1621, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def plot_ice_water_paths(self, lon_2d, lat_2d, ctp, cwp, cwp_1621):
 
         #     " The values in this SDS are set to mean the following:                              \n",
         #     " 0 -- cloud mask undetermined                                                       \n",
@@ -739,21 +758,19 @@ class Imagery:
         #     " 3 -- ice cloud                                                                     \n",
         #     " 4 -- undetermined phase cloud (but retrieval is attempted as  liquid water)        \n",
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "ice_path")
+        save_dir = os.path.join(self.outdir, "ice_path")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title  = self.doy_2_date_str(acq_dt) + "Z"
-
-        instrument = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title  = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
@@ -790,19 +807,19 @@ class Imagery:
             im_iwp[im_iwp > vmax]           = vmax
             im_iwp_1621[im_iwp_1621 > vmax] = vmax
             cbar_ticks = np.linspace(0, vmax, 5, dtype='int')
-            cmap = plot_util.arctic_cloud_cmap
+            cmap = util.plot_util.arctic_cloud_cmap
             extend = 'max'
         else:
             cbar_ticks = np.linspace(0, np.nanmax([im_iwp_1621, im_iwp_1621]), 5, dtype='int')
-            cmap = plot_util.arctic_cloud_alt_cmap
+            cmap = util.plot_util.arctic_cloud_alt_cmap
             extend = 'neither'
 
-        if geojson_fpath is not None:
-            im_iwp      = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_iwp, proj_plot, proj_data)
-            im_iwp_1621 = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_iwp_1621, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            im_iwp      = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_iwp, proj_plot, util.plot_util.proj_data)
+            im_iwp_1621 = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_iwp_1621, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ##############################################################
 
@@ -811,9 +828,9 @@ class Imagery:
                             shading='nearest',
                             zorder=2,
                             cmap=cmap,
-                            transform=proj_data)
-        title = "{} ({}) IWP - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
+                            transform=util.plot_util.proj_data)
+        title = "{} ({}) IWP - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y00, ax=ax00, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -821,7 +838,7 @@ class Imagery:
         cbar.ax.tick_params(length=0, labelsize=24)
         cbar.outline.set_edgecolor('black')
         cbar.outline.set_linewidth(1)
-        ax00.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax00.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         ax00.set_aspect(1.25)
 
         ##############################################################
@@ -831,9 +848,9 @@ class Imagery:
                             shading='nearest',
                             zorder=1,
                             cmap=cmap,
-                            transform=proj_data)
-        title = "{} ({}) IWP (1621) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
+                            transform=util.plot_util.proj_data)
+        title = "{} ({}) IWP (1621) - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y01, ax=ax01, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -841,36 +858,36 @@ class Imagery:
         cbar.ax.tick_params(length=0, labelsize=24)
         cbar.outline.set_edgecolor('black')
         cbar.outline.set_linewidth(1)
-        ax01.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax01.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         ax01.set_aspect(1.25)
 
         ##############################################################
 
         fig.subplots_adjust(wspace=0.1)
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
 
 
 
-    def plot_optical_depths(self, lon_2d, lat_2d, cot, cot_1621, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def plot_optical_depths(self, lon_2d, lat_2d, cot, cot_1621):
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "optical_thickness")
+        save_dir = os.path.join(self.outdir, "optical_thickness")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
         vmax = 100.
 
-        dt_title     = self.doy_2_date_str(acq_dt) + "Z"
-        instrument   = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title     = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname   = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
@@ -883,29 +900,29 @@ class Imagery:
             im_cot[im_cot > vmax]           = vmax
             im_cot_1621[im_cot_1621 > vmax] = vmax
             cbar_ticks = np.linspace(0, vmax, 5, dtype='int')
-            cmap = plot_util.arctic_cloud_cmap
+            cmap = util.plot_util.arctic_cloud_cmap
             extend = 'max'
         else:
             cbar_ticks = np.linspace(0, np.nanmax([im_cot, im_cot_1621]), 5, dtype='int')
-            cmap = plot_util.arctic_cloud_alt_cmap
+            cmap = util.plot_util.arctic_cloud_alt_cmap
             extend = 'neither'
 
-        if geojson_fpath is not None:
-            im_cot      = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_cot, proj_plot, proj_data)
-            im_cot_1621 = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_cot_1621, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            im_cot      = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_cot, proj_plot, util.plot_util.proj_data)
+            im_cot_1621 = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_cot_1621, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_cot,
                             shading='nearest',
                             zorder=2,
                             cmap=cmap,
-                            transform=proj_data)
+                            transform=util.plot_util.proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) COT - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
+        title = "{} ({}) COT - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y00, ax=ax00, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -913,7 +930,7 @@ class Imagery:
         cbar.ax.tick_params(length=0, labelsize=24)
         cbar.outline.set_edgecolor('black')
         cbar.outline.set_linewidth(1)
-        ax00.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax00.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         ax00.set_aspect(1.25)
 
         ##############################################################
@@ -923,10 +940,10 @@ class Imagery:
                             shading='nearest',
                             zorder=1,
                             cmap=cmap,
-                            transform=proj_data)
+                            transform=util.plot_util.proj_data)
 
-        title = "{} ({}) COT (1621) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
+        title = "{} ({}) COT (1621) - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
         cbar = fig.colorbar(y01, ax=ax01, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -934,18 +951,19 @@ class Imagery:
         cbar.ax.tick_params(length=0, labelsize=24)
         cbar.outline.set_edgecolor('black')
         cbar.outline.set_linewidth(1)
-        ax01.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax01.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         ax01.set_aspect(1.25)
 
         ##############################################################
 
         fig.subplots_adjust(wspace=0.1)
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
 
 
-    def plot_cloud_phase(self, lon_2d, lat_2d, ctp_swir, ctp_ir, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def plot_cloud_phase(self, lon_2d, lat_2d, ctp_swir, ctp_ir):
 
         """
         IR Phase
@@ -963,22 +981,21 @@ class Imagery:
         4 -- undetermined phase cloud (but retrieval is attempted as  liquid water)
         """
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "cloud_phase")
+        save_dir = os.path.join(self.outdir, "cloud_phase")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
         patches_legend_swir = []
         patches_legend_ir   = []
-        dt_title     = self.doy_2_date_str(acq_dt) + "Z"
-        instrument   = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title     = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
@@ -987,30 +1004,30 @@ class Imagery:
         im_ctp_swir = ctp_swir
         im_ctp_ir   = ctp_ir
 
-        if geojson_fpath is not None:
-            im_ctp_swir = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_ctp_swir, proj_plot, proj_data)
-            im_ctp_ir   = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_ctp_ir, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            im_ctp_swir = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_ctp_swir, proj_plot, util.plot_util.proj_data)
+            im_ctp_ir   = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_ctp_ir, proj_plot, util.plot_util.proj_data)
 
         # im_ctp_swir = np.nan_to_num(im_ctp_swir, 0)
         im_ctp_swir = np.ma.masked_where((np.isnan(im_ctp_swir) | (im_ctp_swir == 0)), im_ctp_swir)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_ctp_swir,
                             shading='nearest',
                             zorder=2,
-                            cmap=plot_util.ctp_swir_cmap,
-                            transform=proj_data)
+                            cmap=util.plot_util.ctp_swir_cmap,
+                            transform=util.plot_util.proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) Cloud Phase (SWIR/COP) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
-        ax00.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        title = "{} ({}) Cloud Phase (SWIR/COP) - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
+        ax00.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
         # create legend labels
-        for i in range(len(plot_util.ctp_swir_cmap_ticklabels)):
-            patches_legend_swir.append(matplotlib.patches.Patch(color=plot_util.ctp_swir_cmap_arr[i] , label=plot_util.ctp_swir_cmap_ticklabels[i]))
+        for i in range(len(util.plot_util.ctp_swir_cmap_ticklabels)):
+            patches_legend_swir.append(matplotlib.patches.Patch(color=util.plot_util.ctp_swir_cmap_arr[i] , label=util.plot_util.ctp_swir_cmap_ticklabels[i]))
 
         ax00.legend(handles=patches_legend_swir, loc='upper center', bbox_to_anchor=(0.5, -0.05), facecolor='white',
                     ncol=len(patches_legend_swir), fancybox=True, shadow=False, frameon=False, prop={'size': 24})
@@ -1022,16 +1039,16 @@ class Imagery:
         y01 = ax01.pcolormesh(lon_2d, lat_2d, im_ctp_ir,
                     shading='nearest',
                     zorder=2,
-                    cmap=plot_util.ctp_ir_cmap,
-                    transform=proj_data)
+                    cmap=util.plot_util.ctp_ir_cmap,
+                    transform=util.plot_util.proj_data)
         # ax01.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) Cloud Phase (IR) - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
-        ax01.set_extent(ccrs_views[mode]['view_extent'], proj_data
+        title = "{} ({}) Cloud Phase (IR) - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
+        ax01.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data
                         )
         # create legend labels
-        for i in range(len(plot_util.ctp_ir_cmap_ticklabels)):
-            patches_legend_ir.append(matplotlib.patches.Patch(color=plot_util.ctp_ir_cmap_arr[i] , label=plot_util.ctp_ir_cmap_ticklabels[i]))
+        for i in range(len(util.plot_util.ctp_ir_cmap_ticklabels)):
+            patches_legend_ir.append(matplotlib.patches.Patch(color=util.plot_util.ctp_ir_cmap_arr[i] , label=util.plot_util.ctp_ir_cmap_ticklabels[i]))
 
         ax01.legend(handles=patches_legend_ir, loc='upper center', bbox_to_anchor=(0.5, -0.05), facecolor='white',
                     ncol=len(patches_legend_ir), fancybox=True, shadow=False, frameon=False, prop={'size': 24})
@@ -1039,19 +1056,20 @@ class Imagery:
         ##############################################################
 
         fig.subplots_adjust(wspace=0.1)
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
 
 
-    def plot_cloud_top(self, lon_2d, lat_2d, cth, ctt, satellite, acq_dt, outdir, geojson_fpath, buoys, mode):
+    def plot_cloud_top(self, lon_2d, lat_2d, cth, ctt):
 
-        proj_plot = ccrs.Orthographic(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat'])
+        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
+        if not os.path.exists(self.outdir):
+            os.makedirs(self.outdir)
 
-        save_dir = os.path.join(outdir, "cloud_top_height_temperature")
+        save_dir = os.path.join(self.outdir, "cloud_top_height_temperature")
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
@@ -1059,10 +1077,9 @@ class Imagery:
         patches_legend_cth = []
         patches_legend_ctt = []
 
-        dt_title  = self.doy_2_date_str(acq_dt) + "Z"
-        instrument = self.get_instrument(satellite)
-        fname_target = self.format_acq_dt(acq_dt)
-        sat_fname    = satellite.split('/')[0]
+        dt_title  = self.doy_2_date_str(self.acq_dt) + "Z"
+        fname_target = self.format_acq_dt(self.acq_dt)
+        sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
@@ -1071,30 +1088,30 @@ class Imagery:
         im_cth = cth
         im_ctt = ctt
 
-        if geojson_fpath is not None:
-            im_cth = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_cth, proj_plot, proj_data)
-            im_ctt = self.mask_geojson(geojson_fpath, lon_2d, lat_2d, im_ctt, proj_plot, proj_data)
+        if self.geojson_fpath is not None:
+            im_cth = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_cth, proj_plot, util.plot_util.proj_data)
+            im_ctt = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_ctt, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(plot_util.mpl_style)
+        plt.style.use(util.plot_util.mpl_style)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         im_cth_binned = self.bin_cth_to_class(im_cth)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_cth_binned,
                             shading='nearest',
                             zorder=1,
-                            cmap=plot_util.cth_cmap,
-                            transform=proj_data)
+                            cmap=util.plot_util.cth_cmap,
+                            transform=util.plot_util.proj_data)
 
-        title = "{} ({}) Cloud Top Height - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax00, buoys=buoys, title=title, scale=1.4)
+        title = "{} ({}) Cloud Top Height - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
 
-        for i in range(len(plot_util.cth_cmap_ticklabels)):
-            patches_legend_cth.append(matplotlib.patches.Patch(color=plot_util.cth_cmap_arr[i] , label=plot_util.cth_cmap_ticklabels[i]))
+        for i in range(len(util.plot_util.cth_cmap_ticklabels)):
+            patches_legend_cth.append(matplotlib.patches.Patch(color=util.plot_util.cth_cmap_arr[i] , label=util.plot_util.cth_cmap_ticklabels[i]))
 
         ax00.legend(handles=patches_legend_cth, loc='upper center', bbox_to_anchor=(0.5, -0.05), facecolor='white',
                     ncol=len(patches_legend_cth), fancybox=True, shadow=False, frameon=False, prop={'size': 24})
-        ax00.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax00.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         ax00.set_aspect(1.25)
         ##############################################################
 
@@ -1118,46 +1135,25 @@ class Imagery:
                             shading='nearest',
                             zorder=1,
                             cmap=ctt_cmap,
-                            transform=proj_data)
+                            transform=util.plot_util.proj_data)
 
-        title = "{} ({}) Cloud Top Temperature - ".format(instrument, satellite) + dt_title
-        self.add_ancillary(ax01, buoys=buoys, title=title, scale=1.4)
+        title = "{} ({}) Cloud Top Temperature - ".format(self.instrument, self.satellite) + dt_title
+        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
         for i in range(len(ctt_cmap_ticklabels)):
-            patches_legend_ctt.append(matplotlib.patches.Patch(color=plot_util.ctt_cmap_arr[i] , label=ctt_cmap_ticklabels[i]))
+            patches_legend_ctt.append(matplotlib.patches.Patch(color=util.plot_util.ctt_cmap_arr[i] , label=ctt_cmap_ticklabels[i]))
 
         ax01.legend(handles=patches_legend_ctt, loc='upper center', bbox_to_anchor=(0.5, -0.025), facecolor='white',
             ncol=int(len(patches_legend_ctt)/2), fancybox=True, shadow=False, frameon=False, prop={'size': 24},
             title='Cloud Top Temperature ($^\circ C$ )', title_fontsize=18)
-        ax01.set_extent(ccrs_views[mode]['view_extent'], proj_data)
+        ax01.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         ax01.set_aspect(1.25)
         ##############################################################
 
         fig.subplots_adjust(wspace=0.1)
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight")
+        metadata = self.create_metadata()
+        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
         return 1
     ############################################################################################################################
 
 ################################################################################################################
-
-proj_data = ccrs.PlateCarree()
-cfs_alert = (-62.3167, 82.5) # Station Alert
-stn_nord  = (-16.6667, 81.6) # Station Nord
-thule_pituffik = (-68.703056, 76.531111) # Pituffik Space Base
-
-ccrs_views =        {'lincoln': {'view_extent': [-130, 50, 76, 89],
-                                'vlon':         -40,
-                                'vlat':          84},
-                    'platypus': {'view_extent': [-140, -30, 75.5, 89.5],
-                                'vlon':         -70,
-                                'vlat':          84},
-                    'canada':   {'view_extent': [-140, -30, 75.5, 89.5],
-                                'vlon':         -70,
-                                'vlat':          84},
-                    'ca_archipelago':   {'view_extent': [-140, -30, 75.5, 89.5],
-                                        'vlon':         -70,
-                                        'vlat':          84},
-                    'baffin':    {'view_extent': [-130, -40, 67, 84],
-                                'vlon':         -60,
-                                'vlat':          84},
-                }

@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
+import cartopy.crs as ccrs
 
 # Add every font at the specified location
 if 'MPL_FONT_DIR' in os.environ.keys():
@@ -62,3 +63,25 @@ ctt_cmap = matplotlib.colors.ListedColormap(ctt_cmap_arr)
 
 arctic_cloud_cmap = 'RdBu_r'
 arctic_cloud_alt_cmap = 'RdBu_r'
+
+proj_data = ccrs.PlateCarree()
+cfs_alert = (-62.3167, 82.5) # Station Alert
+stn_nord  = (-16.6667, 81.6) # Station Nord
+thule_pituffik = (-68.703056, 76.531111) # Pituffik Space Base
+
+ccrs_views =        {'lincoln': {'view_extent': [-130, 50, 76, 89],
+                                'vlon':         -40,
+                                'vlat':          84},
+                    'platypus': {'view_extent': [-140, -30, 75.5, 89.5],
+                                'vlon':         -70,
+                                'vlat':          84},
+                    'canada':   {'view_extent': [-140, -30, 75.5, 89.5],
+                                'vlon':         -70,
+                                'vlat':          84},
+                    'ca_archipelago':   {'view_extent': [-140, -30, 75.5, 89.5],
+                                        'vlon':         -70,
+                                        'vlat':          84},
+                    'baffin':    {'view_extent': [-130, -40, 67, 84],
+                                'vlon':         -60,
+                                'vlat':          84},
+                }
