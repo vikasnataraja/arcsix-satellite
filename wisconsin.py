@@ -313,7 +313,7 @@ class WisconsinDownload:
     def read_granule_json(self, json_output):
 
         if self.verbose:
-            print("Message [read_granule_json]: Found {} granules between provided start and end times".format(len(json_output['data'])))
+            print("Message [read_granule_json]: Found {} granules between provided start ({}) and end times ({})".format(len(json_output['data']), self.start_time.strftime("%Y-%m-%d_%H:%MZ"), self.end_time.strftime("%Y-%m-%d_%H:%MZ")))
 
         df = pd.DataFrame(json_output['data'])
         # df = df.replace(to_replace='None', value=np.nan).dropna().reset_index(drop=True) # clean it up
@@ -323,7 +323,7 @@ class WisconsinDownload:
         df['overlap'] = df['bounds'].apply(self.calculate_overlap_df)
         df = df[df['overlap'] > self.iou].reset_index(drop=True) # get granules only those that are > iou
         if self.verbose:
-            print("Message [read_file_json]: Found {} granules between provided start and end times after filtering by overlap, ".format(len(df)))
+            print("Message [read_file_json]: Found {} granules between provided start ({}) and end times ({}) after filtering by overlap, ".format(len(df), self.start_time.strftime("%Y-%m-%d_%H:%MZ"), self.end_time.strftime("%Y-%m-%d_%H:%MZ")))
 
         return df
 
@@ -331,7 +331,7 @@ class WisconsinDownload:
     def read_file_json(self, json_output):
 
         if self.verbose:
-            print("Message [read_file_json]: Found {} granules between provided start and end times".format(len(json_output['data'])))
+            print("Message [read_file_json]: Found {} granules between provided start ({}) and end times ({})".format(len(json_output['data']), self.start_time.strftime("%Y-%m-%d_%H:%MZ"), self.end_time.strftime("%Y-%m-%d_%H:%MZ")))
 
         if len(json_output['data']) == 0: # no applicable overpasses found
             if self.verbose:
@@ -348,7 +348,7 @@ class WisconsinDownload:
 
         if len(df) == 0: # no applicable overpasses found
             if self.verbose:
-                print("Message [read_file_json]: Could not find any applicable overpasses after filtering by SZA ad DayNight mode")
+                print("Message [read_file_json]: Could not find any applicable overpasses after filtering by SZA and DayNight mode")
             return df
 
         df = self.format_asipscli_files_dtypes_df(df) # format the dtypes of easier use
