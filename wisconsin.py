@@ -304,6 +304,7 @@ class WisconsinDownload:
 
             fname_local = os.path.join(outdir, df.name.iloc[i]) # full filepath incl. directory
 
+            # because Wisc data is not organized by days and only goes off start and end dates
             if os.path.basename(os.path.normpath(outdir)) != self.get_ymd_filename(fname_local):
                 print('Message [run_curl_download_command]: The file to be downloaded {} does not belong in this directory {}'.format(fname_local, outdir))
                 continue
@@ -324,7 +325,8 @@ class WisconsinDownload:
                         continue
 
             split_fname_local = os.path.basename(fname_local).split('.')
-            acq_dt = split_fname_local[0] + '.' + split_fname_local[1] + '.' + split_fname_local[2]
+            product_name = split_fname_local[0].split('_')[0] # because LANCE has _NRT has part of name, Wisc does not
+            acq_dt = product_name + '.' + split_fname_local[1] + '.' + split_fname_local[2]
             if acq_dt in util.wisc_util.get_pacq_dts(outdir):
                 print("Message [run_curl_download_command]: File {} already exists based on acq_dt (maybe another source). Will not re-download this file.".format(fname_local))
                 continue

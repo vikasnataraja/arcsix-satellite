@@ -70,6 +70,14 @@ def get_viirs_ref_geo(fdir):
         else:
             pass
 
+    # remove duplicates if any based on acq_dts
+    seen_ref = set()
+    fref = [x for x in fref if not (os.path.basename(x).split('.')[1] + '.' + os.path.basename(x).split('.')[2] in seen_ref or seen_ref.add(os.path.basename(x).split('.')[1] + '.' + os.path.basename(x).split('.')[2]))]
+
+    seen_geo = set()
+    f03 = [x for x in f03 if not (os.path.basename(x).split('.')[1] + '.' + os.path.basename(x).split('.')[2] in seen_geo or seen_geo.add(os.path.basename(x).split('.')[1] + '.' + os.path.basename(x).split('.')[2]))]
+
+
     fref = sorted(fref, key=lambda x: x.split('.')[2])
     f03  = sorted(f03, key=lambda x: x.split('.')[2])
     return fref, f03

@@ -75,7 +75,8 @@ def get_pacq_dts(fdir):
     for file in os.listdir(fdir):
         if file.endswith(('hdf', 'nc')): # support only modis and viirs files
             split_fparts = os.path.basename(file).split('.')
-            pacq_dts.append(split_fparts[0] + '.' + split_fparts[1] + '.' + split_fparts[2])
+            product_name = split_fparts[0].split('_')[0] # because LANCE has _NRT has part of name, Wisc does not
+            pacq_dts.append(product_name + '.' + split_fparts[1] + '.' + split_fparts[2])
 
     return pacq_dts
 
