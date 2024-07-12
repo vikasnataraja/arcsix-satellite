@@ -237,15 +237,25 @@ class WisconsinDownload:
         return percent_in
 
 
-    def run_curl_download_command(self, outdir):
+    def get_ymd_filename(self, fname):
+        fsplit = fname.split('.')
+        fdt = datetime.datetime.strptime(fsplit[1], 'A%Y%j')
+        return fdt.strftime('%Y-%m-%d')
+
+
+    def run_curl_download_command(self, df, outdir):
         """
         Generate command and download ASIPSCLI files to `outdir`
         """
         success_count = 0
 
-        for i in range(len(self.df)):
+        for i in range(len(df)):
 
-            fname_local = os.path.join(outdir, self.df.name.iloc[i]) # full filepath incl. directory
+            fname_local = os.path.join(outdir, df.name.iloc[i]) # full filepath incl. directory
+
+            if os.path.basename(os.path.normpath(outdir)) != self.get_ymd_filename(fname_local):
+                print('Message [run_curl_download_command]: The file to be downloaded {} does not belong in this directory {}'.format(fname_local, outdir))
+                continue
 
             if os.path.isfile(fname_local):
                 if self.overwrite:
@@ -268,10 +278,10 @@ class WisconsinDownload:
                 print("Message [run_curl_download_command]: File {} already exists based on acq_dt (maybe another source). Will not re-download this file.".format(fname_local))
                 continue
 
-            url = self.df['urls'].iloc[i]['public']
+            url = df['urls'].iloc[i]['public']
             cmd = ["curl", "{}".format(url), "-sSf", "-H", "X-API-Token: {}".format(os.environ['ASIPSCLI_TOKEN']), "-o", "{}".format(fname_local)]
-            if self.verbose:
-                print('Message [run_curl_download_command]: Running command:\n', ' '.join(cmd), '\n')
+            # if self.verbose:
+            #     print('Message [run_curl_download_command]: Running command:\n', ' '.join(cmd), '\n')
             try:
                 ret = subprocess.run(cmd, capture_output=True, check=True, text=True)
 
@@ -354,7 +364,7 @@ class WisconsinDownload:
         df['acq_dt'] = df['begin_time'].apply(self.gtime2acqdt_df)
 
         if self.verbose:
-            print("Message [read_file_json]: Found {} granules between provided start and end times after filtering by overlap, ".format(len(df)))
+            print("Message [read_file_json]: Found {} granules between provided start ({}) and end times ({}) after filtering by overlap, ".format(len(df), self.start_time.strftime("%Y-%m-%d_%H:%MZ"), self.end_time.strftime("%Y-%m-%d_%H:%MZ")))
 
         return df
 
@@ -384,12 +394,17 @@ class WisconsinDownload:
         df = self.read_file_json(json_out) # make df available to class object
 
         # concatenate or save the dataframe, otherwise return empty
-        if len(df) == 0 and self.verbose:
-            print("Message [download_asipscli_file]: No applicable overpasses found.")
+        if len(df) == 0:
+            if self.verbose:
+                print("Message [download_asipscli_file]: No applicable overpasses found.")
             return 0
 
         else:
-            current_count = len(self.df)
+            success_count = self.run_curl_download_command(df=df, outdir=outdir)
+            if success_count == 0:
+                print("Message [download_asipscli_file]: One or more of the downloads did not complete, either due to a file already existing or another issue. Enable verbose option to debug.\n")
+                return 0
+
             if len(self.df) == 0:
                 self.df = df
 
@@ -397,13 +412,8 @@ class WisconsinDownload:
                 self.df = pd.concat([self.df, df], axis=0)
                 self.df = self.df.reset_index(drop=True)
 
-            success_count = self.run_curl_download_command(outdir=outdir)
-            if success_count == 0:
-                print("Message [download_asipscli_file]: One or more of the downloads did not complete, either due to a file already existing or another issue. Enable verbose option to debug.\n")
-                return 0
-
             print("Message [download_asipscli_file]: Download successful.")
-            return len(self.df) - current_count
+            return len(df)
 
 
     def check_file_status(self, fname_local, data_format=None):
