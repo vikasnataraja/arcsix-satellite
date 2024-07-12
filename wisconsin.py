@@ -242,6 +242,56 @@ class WisconsinDownload:
         fdt = datetime.datetime.strptime(fsplit[1], 'A%Y%j')
         return fdt.strftime('%Y-%m-%d')
 
+    def check_file_status(self, fname_local, data_format=None):
+        """
+        Check if a file has been successfully downloaded.
+
+        This function currently supports checking for HDF, NetCDF, and HDF5 files.
+        Params:
+            fname_local (str): The local filename to check.
+            data_format (str): The format of the file. If None, the format is inferred from the file extension.
+        Returns:
+            Returns 1 if the file has been successfully downloaded and 0 otherwise.
+
+        Adapted from EaR3T: https://github.com/hong-chen/er3t
+        """
+
+
+        if data_format is None:
+            data_format = os.path.basename(fname_local).split('.')[-1].lower()
+
+        if data_format in ['hdf', 'hdf4', 'h4']:
+
+            try:
+                from pyhdf.SD import SD, SDC
+                f = SD(fname_local, SDC.READ)
+                f.end()
+                return 1
+
+            except Exception as error:
+                print("Message [check_file_status]", error)
+                return 0
+
+        elif data_format in ['nc', 'nc4', 'netcdf', 'netcdf4']:
+            try:
+                import netCDF4 as nc
+                f = nc.Dataset(fname_local, 'r')
+                f.close()
+                return 1
+
+            except Exception as error:
+                print("Message [check_file_status]", error)
+                return 0
+
+
+    def report_times_for_metadata(self):
+        if len(self.df) == 0:
+            return self.start_time, self.end_time
+
+        recent_dt = datetime.datetime.strptime(max(self.df['begin_time']), "%Y-%m-%dT%H:%M:%S.%fZ")
+        oldest_dt = datetime.datetime.strptime(min(self.df['begin_time']), "%Y-%m-%dT%H:%M:%S.%fZ")
+        return oldest_dt, recent_dt
+
 
     def run_curl_download_command(self, df, outdir):
         """
@@ -414,57 +464,6 @@ class WisconsinDownload:
 
             print("Message [download_asipscli_file]: Download successful.")
             return len(df)
-
-
-    def check_file_status(self, fname_local, data_format=None):
-        """
-        Check if a file has been successfully downloaded.
-
-        This function currently supports checking for HDF, NetCDF, and HDF5 files.
-        Params:
-            fname_local (str): The local filename to check.
-            data_format (str): The format of the file. If None, the format is inferred from the file extension.
-        Returns:
-            Returns 1 if the file has been successfully downloaded and 0 otherwise.
-
-        Adapted from EaR3T: https://github.com/hong-chen/er3t
-        """
-
-
-        if data_format is None:
-            data_format = os.path.basename(fname_local).split('.')[-1].lower()
-
-        if data_format in ['hdf', 'hdf4', 'h4']:
-
-            try:
-                from pyhdf.SD import SD, SDC
-                f = SD(fname_local, SDC.READ)
-                f.end()
-                return 1
-
-            except Exception as error:
-                print("Message [check_file_status]", error)
-                return 0
-
-        elif data_format in ['nc', 'nc4', 'netcdf', 'netcdf4']:
-            try:
-                import netCDF4 as nc
-                f = nc.Dataset(fname_local, 'r')
-                f.close()
-                return 1
-
-            except Exception as error:
-                print("Message [check_file_status]", error)
-                return 0
-
-
-    def report_times_for_metadata(self):
-        if len(self.df) == 0:
-            return self.start_time, self.end_time
-
-        recent_dt = datetime.datetime.strptime(max(self.df['begin_time']), "%Y-%m-%dT%H:%M:%S.%fZ")
-        oldest_dt = datetime.datetime.strptime(min(self.df['begin_time']), "%Y-%m-%dT%H:%M:%S.%fZ")
-        return oldest_dt, recent_dt
 
 
     def save_df_to_file(self, fpath):
