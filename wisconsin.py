@@ -452,7 +452,9 @@ class WisconsinDownload:
         if len(self.df) == 0:
             return self.start_time, self.end_time
 
-        return min(self.df['begin_time']), max(self.df['begin_time'])
+        recent_dt = datetime.datetime.strptime(max(self.df['begin_time']), "%Y-%m-%dT%H:%M:%S.%fZ")
+        oldest_dt = datetime.datetime.strptime(min(self.df['begin_time']), "%Y-%m-%dT%H:%M:%S.%fZ")
+        return oldest_dt, recent_dt
 
 
     def save_df_to_file(self, fpath):
