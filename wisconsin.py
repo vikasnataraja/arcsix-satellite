@@ -508,6 +508,8 @@ def run(args):
 
         # Save metadata start and end dates
         oldest_dt, recent_dt = wisc.report_times_for_metadata()
+        if oldest_dt == recent_dt:
+            oldest_dt = start_dt
         with open(os.path.join(fdir_out_dt, "metadata.txt"), "a") as f:
             f.write('Start_Date: {}\n'.format(oldest_dt.strftime('%Y-%m-%d-%H%M')))
             f.write('End_Date:   {}\n'.format(recent_dt.strftime('%Y-%m-%d-%H%M')))
