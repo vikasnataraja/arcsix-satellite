@@ -201,12 +201,11 @@ class Imagery:
         return dts, lons, lats
 
 
-    def mask_geojson(self, geojson_fpath, lon_2d, lat_2d, dat, proj_plot, proj_data):
+    def mask_geojson(self, lon_2d, lat_2d, dat, proj_plot, proj_data):
 
-        if geojson_fpath is not None:
-            import json
+        import json
 
-        with open(geojson_fpath, 'r') as f:
+        with open(self.geojson_fpath, 'r') as f:
             gdata = json.load(f)
             # n_coords = len(data['features'][0]['geometry']['coordinates'][0])
 
@@ -246,7 +245,7 @@ class Imagery:
         return metadata
 
 
-    def add_ancillary(self, ax, buoys=None, title=None, scale=1):
+    def add_ancillary(self, ax, title=None, scale=1):
         # ax.scatter(cfs_alert[0], cfs_alert[1], marker='*', s=30, color='white', transform=proj_data, zorder=2)
         # ax.text(cfs_alert[0]-0.5, cfs_alert[1]-0.5, "Stn. Alert", ha="center", color='white', transform=proj_data,
         #         fontsize=14, fontweight="bold", zorder=2)
@@ -291,8 +290,8 @@ class Imagery:
             spine.set_linewidth(1)
 
         # visualize buoys
-        if buoys is not None:
-            dt, lons, lats = self.get_buoy_data(buoys)
+        if self.buoys is not None:
+            dt, lons, lats = self.get_buoy_data(self.buoys)
 
             # dt_text_box = ''
             buoy_ids = list(dt.keys())
@@ -390,7 +389,7 @@ class Imagery:
         img_fci = np.stack([red, green, blue], axis=-1)
 
         if self.geojson_fpath is not None:
-            img_fci = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
+            img_fci = self.mask_geojson(lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
         plt.style.use(util.plot_util.mpl_style)
@@ -403,7 +402,7 @@ class Imagery:
                         transform=util.plot_util.proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) False Color (7-2-1) - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax, buoys=self.buoys, title=title)
+        self.add_ancillary(ax, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
@@ -441,7 +440,7 @@ class Imagery:
         img_fci = np.stack([red, green, blue], axis=-1)
 
         if self.geojson_fpath is not None:
-            img_fci = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
+            img_fci = self.mask_geojson(lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
         plt.style.use(util.plot_util.mpl_style)
@@ -454,7 +453,7 @@ class Imagery:
                         transform=util.plot_util.proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) False Color (3-6-7) - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax, buoys=self.buoys, title=title)
+        self.add_ancillary(ax, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
@@ -495,7 +494,7 @@ class Imagery:
         # rgb = np.interp(rgb, (np.nanpercentile(rgb, 1), np.nanpercentile(rgb, 99)), (0, 1))
 
         if self.geojson_fpath is not None:
-            rgb = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, rgb, proj_plot, util.plot_util.proj_data)
+            rgb = self.mask_geojson(lon_2d, lat_2d, rgb, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
         plt.style.use(util.plot_util.mpl_style)
@@ -509,7 +508,7 @@ class Imagery:
                         transform=util.plot_util.proj_data)
         # ax.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) True Color - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax, buoys=self.buoys, title=title)
+        self.add_ancillary(ax, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
@@ -547,7 +546,7 @@ class Imagery:
         img_fci = np.stack([red, green, blue], axis=-1)
 
         if self.geojson_fpath is not None:
-            img_fci = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
+            img_fci = self.mask_geojson(lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
         plt.style.use(util.plot_util.mpl_style)
@@ -564,7 +563,7 @@ class Imagery:
         else:
             title = "{} ({}) False Color (1.38-1.61-2.25$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
 
-        self.add_ancillary(ax, buoys=self.buoys, title=title)
+        self.add_ancillary(ax, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
@@ -603,7 +602,7 @@ class Imagery:
         img_fci = np.stack([red, green, blue], axis=-1)
 
         if self.geojson_fpath is not None:
-            img_fci = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
+            img_fci = self.mask_geojson(lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
         plt.style.use(util.plot_util.mpl_style)
@@ -620,7 +619,7 @@ class Imagery:
         else:
             title = "{} ({}) False Color (10.76-1.61-2.25$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
 
-        self.add_ancillary(ax, buoys=self.buoys, title=title)
+        self.add_ancillary(ax, title=title)
 
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
@@ -693,8 +692,8 @@ class Imagery:
             extend = 'neither'
 
         if self.geojson_fpath is not None:
-            im_lwp      = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_lwp, proj_plot, util.plot_util.proj_data)
-            im_lwp_1621 = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_lwp_1621, proj_plot, util.plot_util.proj_data)
+            im_lwp      = self.mask_geojson(lon_2d, lat_2d, im_lwp, proj_plot, util.plot_util.proj_data)
+            im_lwp_1621 = self.mask_geojson(lon_2d, lat_2d, im_lwp_1621, proj_plot, util.plot_util.proj_data)
 
         ##############################################################
 
@@ -709,7 +708,7 @@ class Imagery:
                             transform=util.plot_util.proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) LWP - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax00, title=title, scale=1.4)
         cbar = fig.colorbar(y00, ax=ax00, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -730,7 +729,7 @@ class Imagery:
                         transform=util.plot_util.proj_data)
         # ax01.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) LWP (1621) - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax01, title=title, scale=1.4)
         cbar = fig.colorbar(y01, ax=ax01, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -816,8 +815,8 @@ class Imagery:
             extend = 'neither'
 
         if self.geojson_fpath is not None:
-            im_iwp      = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_iwp, proj_plot, util.plot_util.proj_data)
-            im_iwp_1621 = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_iwp_1621, proj_plot, util.plot_util.proj_data)
+            im_iwp      = self.mask_geojson(lon_2d, lat_2d, im_iwp, proj_plot, util.plot_util.proj_data)
+            im_iwp_1621 = self.mask_geojson(lon_2d, lat_2d, im_iwp_1621, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(40, 40))
         plt.style.use(util.plot_util.mpl_style)
@@ -831,7 +830,7 @@ class Imagery:
                             cmap=cmap,
                             transform=util.plot_util.proj_data)
         title = "{} ({}) IWP - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax00, title=title, scale=1.4)
         cbar = fig.colorbar(y00, ax=ax00, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -851,7 +850,7 @@ class Imagery:
                             cmap=cmap,
                             transform=util.plot_util.proj_data)
         title = "{} ({}) IWP (1621) - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax01, title=title, scale=1.4)
         cbar = fig.colorbar(y01, ax=ax01, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -909,8 +908,8 @@ class Imagery:
             extend = 'neither'
 
         if self.geojson_fpath is not None:
-            im_cot      = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_cot, proj_plot, util.plot_util.proj_data)
-            im_cot_1621 = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_cot_1621, proj_plot, util.plot_util.proj_data)
+            im_cot      = self.mask_geojson(lon_2d, lat_2d, im_cot, proj_plot, util.plot_util.proj_data)
+            im_cot_1621 = self.mask_geojson(lon_2d, lat_2d, im_cot_1621, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(40, 40))
         plt.style.use(util.plot_util.mpl_style)
@@ -923,7 +922,7 @@ class Imagery:
                             transform=util.plot_util.proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) COT - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax00, title=title, scale=1.4)
         cbar = fig.colorbar(y00, ax=ax00, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -944,7 +943,7 @@ class Imagery:
                             transform=util.plot_util.proj_data)
 
         title = "{} ({}) COT (1621) - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax01, title=title, scale=1.4)
         cbar = fig.colorbar(y01, ax=ax01, ticks=cbar_ticks, extend=extend,
                             orientation='horizontal', location='bottom',
                             pad=0.05, shrink=0.45)
@@ -1006,8 +1005,8 @@ class Imagery:
         im_ctp_ir   = ctp_ir
 
         if self.geojson_fpath is not None:
-            im_ctp_swir = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_ctp_swir, proj_plot, util.plot_util.proj_data)
-            im_ctp_ir   = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_ctp_ir, proj_plot, util.plot_util.proj_data)
+            im_ctp_swir = self.mask_geojson(lon_2d, lat_2d, im_ctp_swir, proj_plot, util.plot_util.proj_data)
+            im_ctp_ir   = self.mask_geojson(lon_2d, lat_2d, im_ctp_ir, proj_plot, util.plot_util.proj_data)
 
         # im_ctp_swir = np.nan_to_num(im_ctp_swir, 0)
         im_ctp_swir = np.ma.masked_where((np.isnan(im_ctp_swir) | (im_ctp_swir == 0)), im_ctp_swir)
@@ -1023,7 +1022,7 @@ class Imagery:
                             transform=util.plot_util.proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) Cloud Phase (SWIR/COP) - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax00, title=title, scale=1.4)
         ax00.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
         # create legend labels
@@ -1044,7 +1043,7 @@ class Imagery:
                     transform=util.plot_util.proj_data)
         # ax01.set_boundary(boundary, transform=proj_data)
         title = "{} ({}) Cloud Phase (IR) - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax01, title=title, scale=1.4)
         ax01.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data
                         )
         # create legend labels
@@ -1090,8 +1089,8 @@ class Imagery:
         im_ctt = ctt
 
         if self.geojson_fpath is not None:
-            im_cth = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_cth, proj_plot, util.plot_util.proj_data)
-            im_ctt = self.mask_geojson(self.geojson_fpath, lon_2d, lat_2d, im_ctt, proj_plot, util.plot_util.proj_data)
+            im_cth = self.mask_geojson(lon_2d, lat_2d, im_cth, proj_plot, util.plot_util.proj_data)
+            im_ctt = self.mask_geojson(lon_2d, lat_2d, im_ctt, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(40, 40))
         plt.style.use(util.plot_util.mpl_style)
@@ -1105,7 +1104,7 @@ class Imagery:
                             transform=util.plot_util.proj_data)
 
         title = "{} ({}) Cloud Top Height - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax00, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax00, title=title, scale=1.4)
 
         for i in range(len(util.plot_util.cth_cmap_ticklabels)):
             patches_legend_cth.append(matplotlib.patches.Patch(color=util.plot_util.cth_cmap_arr[i] , label=util.plot_util.cth_cmap_ticklabels[i]))
@@ -1139,7 +1138,7 @@ class Imagery:
                             transform=util.plot_util.proj_data)
 
         title = "{} ({}) Cloud Top Temperature - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax01, buoys=self.buoys, title=title, scale=1.4)
+        self.add_ancillary(ax01, title=title, scale=1.4)
         for i in range(len(ctt_cmap_ticklabels)):
             patches_legend_ctt.append(matplotlib.patches.Patch(color=util.plot_util.ctt_cmap_arr[i] , label=ctt_cmap_ticklabels[i]))
 
