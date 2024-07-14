@@ -312,6 +312,7 @@ class Imagery:
     def convert_ir_ctp(self, ctp_ir_arr):
         ctp_ir_arr[ctp_ir_arr==6] = 4
         ctp_ir_arr = np.ma.masked_where(np.isnan(ctp_ir_arr), ctp_ir_arr)
+        ctp_ir_arr = ctp_ir_arr.astype('int8')
         return ctp_ir_arr
 
 
@@ -1010,6 +1011,7 @@ class Imagery:
 
         # im_ctp_swir = np.nan_to_num(im_ctp_swir, 0)
         im_ctp_swir = np.ma.masked_where((np.isnan(im_ctp_swir) | (im_ctp_swir == 0)), im_ctp_swir)
+        im_ctp_swir = im_ctp_swir.astype('int8')
 
         fig = plt.figure(figsize=(40, 40))
         plt.style.use(util.plot_util.mpl_style)
@@ -1041,11 +1043,10 @@ class Imagery:
                     zorder=2,
                     cmap=util.plot_util.ctp_ir_cmap,
                     transform=util.plot_util.proj_data)
-        # ax01.set_boundary(boundary, transform=proj_data)
+
         title = "{} ({}) Cloud Phase (IR) - ".format(self.instrument, self.satellite) + dt_title
         self.add_ancillary(ax01, title=title, scale=1.4)
-        ax01.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data
-                        )
+        ax01.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         # create legend labels
         for i in range(len(util.plot_util.ctp_ir_cmap_ticklabels)):
             patches_legend_ir.append(matplotlib.patches.Patch(color=util.plot_util.ctp_ir_cmap_arr[i] , label=util.plot_util.ctp_ir_cmap_ticklabels[i]))

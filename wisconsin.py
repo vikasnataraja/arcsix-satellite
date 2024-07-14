@@ -70,7 +70,7 @@ class WisconsinDownload:
         instrument = instrument.lower()
         start_time_str, end_time_str = self.format_start_end_time()
 
-        cmd = ["./asipscli", "granule", "--satellite", "{}".format(satellite), "--sensor", "{}".format(instrument), "--start", "{}".format(start_time_str), "--end", "{}".format(end_time_str), "--json"]
+        cmd = ["timeout", "60", "./asipscli", "granule", "--satellite", "{}".format(satellite), "--sensor", "{}".format(instrument), "--start", "{}".format(start_time_str), "--end", "{}".format(end_time_str), "--json"]
         return cmd
 
 
@@ -84,7 +84,7 @@ class WisconsinDownload:
         pversion = util.wisc_util.wisc_info[product]['version']
         start_time_str, end_time_str = self.format_start_end_time()
 
-        cmd = ["./asipscli", "files", "--products", "{}".format(pname), "--start", "{}".format(start_time_str), "--end", "{}".format(end_time_str), "--version", "{}".format(pversion), "--json"]
+        cmd = ["timeout", "120", "./asipscli", "files", "--products", "{}".format(pname), "--start", "{}".format(start_time_str), "--end", "{}".format(end_time_str), "--version", "{}".format(pversion), "--json"]
         return cmd
 
 
@@ -332,7 +332,7 @@ class WisconsinDownload:
                 continue
 
             url = df['urls'].iloc[i]['public']
-            cmd = ["curl", "{}".format(url), "-sSf", "-H", "X-API-Token: {}".format(os.environ['ASIPSCLI_TOKEN']), "-o", "{}".format(fname_local)]
+            cmd = ["timeout", "60", "curl", "{}".format(url), "-sSf", "-H", "X-API-Token: {}".format(os.environ['ASIPSCLI_TOKEN']), "-o", "{}".format(fname_local)]
             # if self.verbose:
             #     print('Message [run_curl_download_command]: Running command:\n', ' '.join(cmd), '\n')
             try:
@@ -497,7 +497,7 @@ def run(args):
         # Save metadata but if file exists, delete it
         if os.path.isfile(os.path.join(fdir_out_dt, 'metadata.txt')):
             exist_start_dt, exist_end_dt = get_start_end_dates_metadata(fdir_out_dt)
-            print('Message [sdown]: metadata.txt file will be removed from {}'.format(os.path.join(fdir_out_dt, 'metadata.txt')))
+            print('Message [run_wisconsin]: metadata.txt file will be removed from {}'.format(os.path.join(fdir_out_dt, 'metadata.txt')))
             os.remove(os.path.join(fdir_out_dt, 'metadata.txt'))
 
 

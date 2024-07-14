@@ -33,8 +33,8 @@ if __name__ == "__main__":
         # os.system(command)
         try:
             ret = subprocess.run(command, capture_output=True, check=True)
-            print(' '.join(ret.args))
+            # print(' '.join(ret.args))
         except Exception as err:
-            print(err, ret.returncode)
+            print(err)
 
     print("Finished creating video files in {}.\n".format(args.fdir))
