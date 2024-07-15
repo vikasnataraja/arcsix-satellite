@@ -24,6 +24,21 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 class Imagery:
 
+    """
+    A class for handling imagery data.
+
+    Args:
+        data_source (str): The source of the imagery data.
+        satellite (str): The satellite used to capture the imagery.
+        acq_dt (str): The acquisition datetime of the imagery.
+        outdir (str): The output directory for saving the processed imagery.
+        geojson_fpath (str): The file path to the GeoJSON file containing the polygon coordinates.
+        buoys (str): The file path to the JSON file containing buoy URLs.
+        mode (str): The mode of operation - one of 'lincoln', 'canada', or 'baffin'
+        quicklook_fdir (str, optional): The path to the directory where quicklook images.
+                                        Defaults to None, i.e., will not generate quicklooks.
+        verbose (bool, optional): Whether to display verbose output. Defaults to False.
+    """
     def __init__(self,
                  data_source,
                  satellite,
@@ -32,16 +47,18 @@ class Imagery:
                  geojson_fpath,
                  buoys,
                  mode,
+                 quicklook_fdir,
                  verbose=False):
 
-        self.data_source   = data_source
-        self.satellite     = satellite
-        self.acq_dt        = acq_dt
-        self.outdir        = outdir
-        self.geojson_fpath = geojson_fpath
-        self.buoys         = buoys
-        self.mode          = mode
-        self.verbose       = verbose
+        self.data_source     = data_source
+        self.satellite       = satellite
+        self.acq_dt          = acq_dt
+        self.outdir          = outdir
+        self.geojson_fpath   = geojson_fpath
+        self.buoys           = buoys
+        self.mode            = mode
+        self.quicklook_fdir  = quicklook_fdir
+        self.verbose         = verbose
 
         self.get_instrument()
 
@@ -65,10 +82,16 @@ class Imagery:
         return arr
 
 
-    def doy_2_date_str(self, acq_dt):
+    def doy2date_str(self, acq_dt):
         year, doy, hours, minutes = acq_dt[1:5], acq_dt[5:8], acq_dt[9:11], acq_dt[11:13]
         date = datetime.datetime.strptime('{} {} {} {}'.format(year, doy, hours, minutes), '%Y %j %H %M')
         return date.strftime('%B %d, %Y: %H%M')
+
+    def ql_doy2date_str(self, acq_dt):
+        """for quicklooks"""
+        acq_dt = acq_dt[1:]
+        date = datetime.datetime.strptime(acq_dt, '%Y%j.%H%M')
+        return date.strftime('%Y-%m-%d-%H%M%SZ')
 
 
     def format_acq_dt(self, acq_dt):
@@ -95,20 +118,22 @@ class Imagery:
 
             band = band/np.cos(np.deg2rad(sza))
 
+        # handle outlier pixels by essentially discarding them
         vmax = np.nanpercentile(band, 99)
         band = np.clip(band, 0., vmax)
-        if scale:
+        if scale: # for RGB integer uint8
             band_mask = np.ma.masked_where((np.isnan(band)), band)
             band = self.scale_255(band, vmax)
             band = np.ma.masked_where(np.ma.getmask(band_mask), band)
             return band
-        else:
+        else: # for all others
             band = (band - np.nanmin(band)) / (vmax - np.nanmin(band))
             band = np.ma.masked_where((np.isnan(band)), band)
             return band
 
 
     def create_3d_mask(self, red, green, blue):
+        """ create 3d mask for plotting NaNs and data"""
         red_mask, green_mask, blue_mask = red.mask, green.mask, blue.mask
         if red_mask.size != red.data.size:
             red_mask = np.full(red.shape, False)
@@ -130,9 +155,23 @@ class Imagery:
 
 
     def get_buoy_data(self, json_fpath, API_KEY="kU7vw3YBcIvnxqTH8DlDeR08QTTfNYiZ", days=7, download_threshold_hrs=6, force_download=False):
+        """
+        Retrieves buoy data from a JSON file or downloads it from a server.
 
+        Args:
+            json_fpath (str): The file path to the JSON file containing the buoy data.
+            API_KEY (str, optional): The API key for accessing the server. Obtain one from your cryosphere innovation account.
+            days (int, optional): The number of days of data to retrieve. Defaults to 7.
+            download_threshold_hrs (int, optional): The time threshold in hours for checking if the data should be downloaded. Defaults to 6.
+            force_download (bool, optional): Whether to force download the data even if it is available locally. Defaults to False.
+
+        Returns:
+            - dts: A dictionary mapping buoy names to lists of datetime objects representing the timestamps of the data.
+            - lons: A dictionary mapping buoy names to lists of longitude values.
+            - lats: A dictionary mapping buoy names to lists of latitude values.
+        """
         import pandas as pd
-        # def read_exist_buoy(download_json_fpath, metadata_json_fpath)
+
         fdir = os.path.dirname(os.path.abspath(json_fpath))
         fields_str = '?field=time_stamp&field=latitude&field=longitude'
         # for field in fields:
@@ -246,6 +285,14 @@ class Imagery:
 
 
     def add_ancillary(self, ax, title=None, scale=1):
+        """
+        Adds ancillary features to the plot.
+
+        Args:
+            ax (matplotlib.axes.Axes): The axes object to add the features to.
+            title (str, optional): The title of the plot. Defaults to None.
+            scale (float, optional): The scale factor for the font sizes. Defaults to 1.
+        """
         # ax.scatter(cfs_alert[0], cfs_alert[1], marker='*', s=30, color='white', transform=proj_data, zorder=2)
         # ax.text(cfs_alert[0]-0.5, cfs_alert[1]-0.5, "Stn. Alert", ha="center", color='white', transform=proj_data,
         #         fontsize=14, fontweight="bold", zorder=2)
@@ -375,12 +422,12 @@ class Imagery:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [false_color_721]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         red    = self.preprocess_band(red,   sza=sza)
@@ -401,7 +448,7 @@ class Imagery:
                         shading='nearest',
                         zorder=2,
                         transform=util.plot_util.proj_data)
-        # ax.set_boundary(boundary, transform=proj_data)
+
         title = "{} ({}) False Color (7-2-1) - ".format(self.instrument, self.satellite) + dt_title
         self.add_ancillary(ax, title=title)
 
@@ -411,6 +458,36 @@ class Imagery:
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
+
+        if self.quicklook_fdir is not None: # generate quicklook imagery
+
+            try: # reduce risk since this is lower priority
+                # granule extent
+                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColor721", ql_dt_str, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+
+                # generate figure
+                fig = plt.figure(figsize=(12, 12))
+                plt.style.use('default')
+                gs  = GridSpec(1, 1, figure=fig)
+                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+
+                ax.pcolormesh(lon_2d, lat_2d, img_fci,
+                                shading='nearest',
+                                zorder=2,
+                                transform=util.plot_util.ql_settings['proj_data'])
+                ax.set_xticks([])
+                ax.set_yticks([])
+                ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
+                ax.set_aspect('auto')
+
+                fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
+                plt.close()
+            except Exception as ql_err:
+                print('Message [false_color_721]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+
         return 1
 
 
@@ -426,12 +503,12 @@ class Imagery:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [false_color_367]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         red    = self.preprocess_band(red,   sza=sza)
@@ -452,7 +529,7 @@ class Imagery:
                         shading='nearest',
                         zorder=2,
                         transform=util.plot_util.proj_data)
-        # ax.set_boundary(boundary, transform=proj_data)
+
         title = "{} ({}) False Color (3-6-7) - ".format(self.instrument, self.satellite) + dt_title
         self.add_ancillary(ax, title=title)
 
@@ -462,6 +539,36 @@ class Imagery:
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
+
+        if self.quicklook_fdir is not None: # generate quicklook imagery
+
+            try: # reduce risk since this is lower priority
+                # granule extent
+                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColor367", ql_dt_str, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+
+                # generate figure
+                fig = plt.figure(figsize=(12, 12))
+                plt.style.use('default')
+                gs  = GridSpec(1, 1, figure=fig)
+                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+
+                ax.pcolormesh(lon_2d, lat_2d, img_fci,
+                                shading='nearest',
+                                zorder=2,
+                                transform=util.plot_util.ql_settings['proj_data'])
+                ax.set_xticks([])
+                ax.set_yticks([])
+                ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
+                ax.set_aspect('auto')
+
+                fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
+                plt.close()
+            except Exception as ql_err:
+                print('Message [false_color_367]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+
         return 1
 
 
@@ -477,12 +584,12 @@ class Imagery:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [true_color]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         red    = self.preprocess_band(red,   sza=sza, scale=True)
@@ -507,16 +614,43 @@ class Imagery:
                         zorder=2,
                         # vmin=0., vmax=1.,
                         transform=util.plot_util.proj_data)
-        # ax.set_boundary(boundary, transform=proj_data)
+
         title = "{} ({}) True Color - ".format(self.instrument, self.satellite) + dt_title
         self.add_ancillary(ax, title=title)
-
-        # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
-
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
+
+        if self.quicklook_fdir is not None: # generate quicklook imagery
+
+            try: # reduce risk since this is lower priority
+                # granule extent
+                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "TrueColor", ql_dt_str, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+
+                # generate figure
+                fig = plt.figure(figsize=(12, 12))
+                plt.style.use('default')
+                gs  = GridSpec(1, 1, figure=fig)
+                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+
+                ax.pcolormesh(lon_2d, lat_2d, rgb,
+                                shading='nearest',
+                                zorder=2,
+                                transform=util.plot_util.ql_settings['proj_data'])
+                ax.set_xticks([])
+                ax.set_yticks([])
+                ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
+                ax.set_aspect('auto')
+
+                fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
+                plt.close()
+            except Exception as ql_err:
+                print('Message [true_color]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+
         return 1
 
 
@@ -532,12 +666,12 @@ class Imagery:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [false_color_cirrus]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         red    = self.preprocess_band(red,   sza=sza)
@@ -565,13 +699,40 @@ class Imagery:
             title = "{} ({}) False Color (1.38-1.61-2.25$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
 
         self.add_ancillary(ax, title=title)
-
-        # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
-
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
+
+        if self.quicklook_fdir is not None: # generate quicklook imagery
+
+            try: # reduce risk since this is lower priority
+                # granule extent
+                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColorCirrus", ql_dt_str, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+
+                # generate figure
+                fig = plt.figure(figsize=(12, 12))
+                plt.style.use('default')
+                gs  = GridSpec(1, 1, figure=fig)
+                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+
+                ax.pcolormesh(lon_2d, lat_2d, img_fci,
+                            shading='nearest',
+                            zorder=2,
+                            transform=util.plot_util.ql_settings['proj_data'])
+                ax.set_xticks([])
+                ax.set_yticks([])
+                ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
+                ax.set_aspect('auto')
+
+                fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
+                plt.close()
+            except Exception as ql_err:
+                print('Message [false_color_cirrus]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+
         return 1
 
 
@@ -587,12 +748,12 @@ class Imagery:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [false_color_ir]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         # radiance so no cosine sza correction needed
@@ -621,13 +782,40 @@ class Imagery:
             title = "{} ({}) False Color (10.76-1.61-2.25$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
 
         self.add_ancillary(ax, title=title)
-
-        # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
-
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
+
+        if self.quicklook_fdir is not None: # generate quicklook imagery
+
+            try: # reduce risk since this is lower priority
+                # granule extent
+                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColorIR", ql_dt_str, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+
+                # generate figure
+                fig = plt.figure(figsize=(12, 12))
+                plt.style.use('default')
+                gs  = GridSpec(1, 1, figure=fig)
+                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+
+                ax.pcolormesh(lon_2d, lat_2d, img_fci,
+                                shading='nearest',
+                                zorder=2,
+                                transform=util.plot_util.ql_settings['proj_data'])
+                ax.set_xticks([])
+                ax.set_yticks([])
+                ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
+                ax.set_aspect('auto')
+
+                fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
+                plt.close()
+            except Exception as ql_err:
+                print('Message [false_color_ir]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+
         return 1
 
 
@@ -650,12 +838,12 @@ class Imagery:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title  = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title  = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [liquid_water_path]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         # pha            = ctp[acq_dt]
@@ -769,12 +957,12 @@ class Imagery:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        dt_title  = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title  = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [ice_water_path]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         # pha            = ctp[acq_dt]
@@ -886,12 +1074,12 @@ class Imagery:
 
         vmax = 100.
 
-        dt_title     = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title     = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname   = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [optical_depths]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         im_cot      = cot
@@ -994,12 +1182,12 @@ class Imagery:
 
         patches_legend_swir = []
         patches_legend_ir   = []
-        dt_title     = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title     = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [cloud_phase]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         im_ctp_swir = ctp_swir
@@ -1029,7 +1217,7 @@ class Imagery:
 
         # create legend labels
         for i in range(len(util.plot_util.ctp_swir_cmap_ticklabels)):
-            patches_legend_swir.append(matplotlib.patches.Patch(color=util.plot_util.ctp_swir_cmap_arr[i] , label=util.plot_util.ctp_swir_cmap_ticklabels[i]))
+            patches_legend_swir.append(matplotlib.patches.Patch(color=util.plot_util.ctp_swir_cmap_arr[i], label=util.plot_util.ctp_swir_cmap_ticklabels[i]))
 
         ax00.legend(handles=patches_legend_swir, loc='upper center', bbox_to_anchor=(0.5, -0.05), facecolor='white',
                     ncol=len(patches_legend_swir), fancybox=True, shadow=False, frameon=False, prop={'size': 24})
@@ -1038,6 +1226,8 @@ class Imagery:
 
         ax01 = fig.add_subplot(gs[1], projection=proj_plot)
         im_ctp_ir = self.convert_ir_ctp(im_ctp_ir)
+        labels = np.unique(im_ctp_ir).astype('int8') # index; for legend
+
         y01 = ax01.pcolormesh(lon_2d, lat_2d, im_ctp_ir,
                     shading='nearest',
                     zorder=2,
@@ -1048,8 +1238,8 @@ class Imagery:
         self.add_ancillary(ax01, title=title, scale=1.4)
         ax01.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         # create legend labels
-        for i in range(len(util.plot_util.ctp_ir_cmap_ticklabels)):
-            patches_legend_ir.append(matplotlib.patches.Patch(color=util.plot_util.ctp_ir_cmap_arr[i] , label=util.plot_util.ctp_ir_cmap_ticklabels[i]))
+        for i in labels:
+            patches_legend_ir.append(matplotlib.patches.Patch(color=util.plot_util.ctp_ir_cmap_arr[i], label=util.plot_util.ctp_ir_cmap_ticklabels[i]))
 
         ax01.legend(handles=patches_legend_ir, loc='upper center', bbox_to_anchor=(0.5, -0.05), facecolor='white',
                     ncol=len(patches_legend_ir), fancybox=True, shadow=False, frameon=False, prop={'size': 24})
@@ -1078,12 +1268,12 @@ class Imagery:
         patches_legend_cth = []
         patches_legend_ctt = []
 
-        dt_title  = self.doy_2_date_str(self.acq_dt) + "Z"
+        dt_title  = self.doy2date_str(self.acq_dt) + "Z"
         fname_target = self.format_acq_dt(self.acq_dt)
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [timelapse]: {} skipped since it already exists.".format(full_fname))
+            print("Message [cloud_top]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         im_cth = cth

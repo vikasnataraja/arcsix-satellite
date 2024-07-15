@@ -135,7 +135,7 @@ def get_modis_noref_geo_cld_opt(fdir):
     return f03, fcld_l2
 
 
-def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buoys, start_dt, end_dt, mode):
+def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buoys, start_dt, end_dt, quicklook_fdir, mode):
 
     f03, fcld_l2 = get_modis_noref_geo_cld_opt(fdir)
     if (len(f03) == 0) or (len(fcld_l2) == 0):
@@ -182,9 +182,9 @@ def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buo
             bgeo_file = os.path.basename(geo_file)
             yyyydoy_hhmm = bgeo_file.split('.')[1][1:] + '.' + bgeo_file.split('.')[2]
 
-            # print("Message [modis_cld_geo]: yyyydoy", yyyydoy)
+            print("Message [modis_cld_geo]: Processing: ", bgeo_file)
             if yyyydoy_hhmm in exist_acq_dts: # if already processed, then skip
-                print("Message [modis_cld_geo]: Skipping {} as it has likely already been processed previously".format(geo_file))
+                print("Message [modis_cld_geo]: Skipping {} as it has likely already been processed previously".format(bgeo_file))
                 continue
 
 
@@ -193,7 +193,6 @@ def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buo
                 continue
 
             cld_file    = fcld_l2[i]
-
             acq_dt = os.path.basename(geo_file).split('.')[1] + '.' + os.path.basename(geo_file).split('.')[2]
 
             if os.path.basename(geo_file).upper().startswith('M'): # modis
@@ -206,7 +205,7 @@ def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buo
         #     print("netcdf error with {}...skipping...\n".format(geo_file))
         #     continue
         except Exception as err:
-            print("some error with {}...skipping...\nError {}\n".format(geo_file, err))
+            print("Error [modis_cld_geo]: some error with {}...skipping...\nError {}\n".format(geo_file, err))
             continue
 
         lon2d_1km = f_geo.data['lon']['data'].T
@@ -238,15 +237,16 @@ def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buo
             if 'uwssec' in geo_file.lower():
                 data_source = 'UWisc SSEC'
             else:
-                data_source = 'NASA LAADS DAAC'
+                data_source = 'NASA LANCE DAAC'
 
             arcsix_l2 = Imagery(data_source=data_source,
-                                     satellite=satellite,
-                                     acq_dt=group_name,
-                                     outdir=outdir,
-                                     geojson_fpath=geojson_fpath,
-                                     buoys=buoys,
-                                     mode=mode) # initialize class object
+                                satellite=satellite,
+                                acq_dt=group_name,
+                                outdir=outdir,
+                                geojson_fpath=geojson_fpath,
+                                buoys=buoys,
+                                quicklook_fdir=quicklook_fdir,
+                                mode=mode) # initialize class object
 
             _ = arcsix_l2.plot_liquid_water_paths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp=ctp, cwp=cwp_2d, cwp_1621=cwp_1621)
             _ = arcsix_l2.plot_ice_water_paths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp=ctp, cwp=cwp_2d, cwp_1621=cwp_1621)
@@ -348,7 +348,7 @@ def get_modis_viirs_ref_geo(fdir):
     return fref, f03
 
 
-def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys, start_dt, end_dt, mode):
+def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys, start_dt, end_dt, quicklook_fdir, mode):
 
     fref, f03 = get_modis_viirs_ref_geo(fdir)
     if (len(fref) == 0) or (len(f03) == 0):
@@ -386,9 +386,9 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             bgeo_file = os.path.basename(geo_file)
             yyyydoy_hhmm = bgeo_file.split('.')[1][1:] + '.' + bgeo_file.split('.')[2]
 
-            # print("Message [modis_viirs_ref_geo]: yyyydoy", yyyydoy)
+            print("Message [modis_viirs_ref_geo]: Processing: ", bgeo_file)
             if yyyydoy_hhmm in exist_acq_dts: # if already processed, then skip
-                # print("Message [modis_viirs_ref_geo]: Skipping {} as it has likely already been processed previously".format(geo_file))
+                print("Message [modis_viirs_ref_geo]: Skipping {} as it has likely already been processed previously".format(bgeo_file))
                 continue
 
 
@@ -405,12 +405,12 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                     viirs_start_dt = start_dt
 
                 if not within_range(geo_file, viirs_start_dt, end_dt):
-                    # print("Message [modis_viirs_ref_geo]: VIIRS: Skipping {} as it is outside the provided date range: {} to {}".format(geo_file, viirs_start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
+                    print("Message [modis_viirs_ref_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(bgeo_file, viirs_start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
                     continue
 
             else: # for MODIS keep latency as is
                 if not within_range(geo_file, start_dt, end_dt):
-                    # print("Message [modis_viirs_ref_geo]: MODIS: Skipping {} as it is outside the provided date range: {} to {}".format(geo_file, start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
+                    print("Message [modis_viirs_ref_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(bgeo_file, start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
                     continue
 
             ########################################################################################################################
@@ -425,7 +425,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             else:
                 raise NotImplementedError("\nOnly VIIRS and MODIS products are supported\n")
         except Exception as err:
-            print("some error: with {}...skipping...\nError: {}\n".format(geo_file, err))
+            print("Message [modis_viirs_ref_geo]: Some error: with {}...skipping...\nError: {}\n".format(geo_file, err))
             continue
 
         lon2d_1km = f_geo.data['lon']['data'].T
@@ -453,7 +453,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                                     keep_dims=True,
                                     bands=["M05", "M07", "M03", "M04", "M10", "M11", "M09", "M15"])
             else:
-                print("\nOnly VIIRS and MODIS products are supported. Instead, file was: {}\n".format(ref_file))
+                print("\nMessage [modis_viirs_ref_geo]: Only VIIRS and MODIS products are supported. Instead, file was: {}\n".format(ref_file))
                 continue
 
             ref_650  = f_vis.data['ref']['data'][0].T
@@ -475,7 +475,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             if 'uwssec' in geo_file.lower():
                 data_source = 'UWisc SSEC'
             else:
-                data_source = 'NASA LAADS DAAC'
+                data_source = 'NASA LANCE DAAC'
 
             arcsix_imagery = Imagery(data_source=data_source,
                                      satellite=satellite,
@@ -483,6 +483,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                                      outdir=outdir,
                                      geojson_fpath=geojson_fpath,
                                      buoys=buoys,
+                                     quicklook_fdir=quicklook_fdir,
                                      mode=mode) # initialize class object
 
             _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d)
@@ -500,9 +501,10 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                 _ = arcsix_imagery.create_false_color_ir_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=rad_11000, green=rad_1640, blue=rad_2130)
 
             valid_count += 1
+            print("Message [modis_viirs_ref_geo]: Successfully processed: ", acq_dt)
 
         except Exception as err:
-            print(err)
+            print("Error [modis_viirs_ref_geo]:", err)
             continue
 
     if valid_count > 0:
@@ -567,10 +569,14 @@ if __name__ == "__main__":
                         'Example:  --geojson my/path/to/geofile.json\n \n')
     parser.add_argument('--buoys', type=str, metavar='', default=None, help='Path to the JSON file containing URLs to the buoys csv data')
     parser.add_argument('--mode', type=str, metavar='', default='lincoln', help='One of "baffin", "lincoln", or "platypus" ')
+    parser.add_argument("--quicklook_fdir", type=str, default=None, help="Path to directory where quicklook images will be saved")
     args = parser.parse_args()
 
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)
+
+    if (args.quicklook_fdir is not None) and (not os.path.exists(args.quicklook_fdir)):
+        os.makedirs(args.quicklook_fdir)
 
     manual_list = []
 
@@ -610,15 +616,10 @@ if __name__ == "__main__":
 
         outdir = args.outdir
 
-        # metadata = np.array([year, month, date, hour, minute, sec, extent[0], extent[1], extent[2], extent[3]])
-        # lon_1d, lat_1d = calc_lonlat_arr(west=extent[0], south=extent[2],
-        #                                 width=args.width, height=args.height,
-        #                                 resolution=args.resolution)
-
         ret = 0
         if args.nrt:
-            ret += save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, mode=args.mode)
-            ret += save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, mode=args.mode)
+            ret += save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, mode=args.mode)
+            ret += save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, mode=args.mode)
 
         if ret == 0:
             manual_list.append(fdir)

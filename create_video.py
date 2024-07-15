@@ -1,11 +1,13 @@
 import os
 import sys
+import datetime
 import subprocess
 from argparse import ArgumentParser
 
 no_video_dirs = ['ice_path', 'water_path', 'optical_thickness', 'cloud_phase', 'cloud_top_height_temperature']
 if __name__ == "__main__":
 
+    START_TIME = datetime.datetime.now()
     parser = ArgumentParser(prog='create_video')
     parser.add_argument('--fdir', type=str, metavar='',
                         help='Top-level source directory\n')
@@ -38,3 +40,5 @@ if __name__ == "__main__":
             print(err)
 
     print("Finished creating video files in {}.\n".format(args.fdir))
+    END_TIME = datetime.datetime.now()
+    print('Time taken to execute {}: {}'.format(os.path.basename(__file__), END_TIME - START_TIME))

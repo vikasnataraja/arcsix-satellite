@@ -536,7 +536,7 @@ def run(args):
 
 if __name__ == '__main__':
 
-
+    START_TIME = datetime.datetime.now()
     parser = ArgumentParser(prog='wisconsin', formatter_class=RawTextHelpFormatter,
                             description="Tool to Download University of Wisconsin SSEC data")
 
@@ -576,3 +576,6 @@ if __name__ == '__main__':
         print('Script finished running. Number of downloads:')
         for key, value in product_counter.items():
             print(key, ':', value)
+
+    END_TIME = datetime.datetime.now()
+    print('Time taken to execute {}: {}'.format(os.path.basename(__file__), END_TIME - START_TIME))

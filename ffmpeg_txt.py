@@ -1,8 +1,9 @@
 import os
 import sys
+import datetime
 from argparse import ArgumentParser
 import numpy as np
-import datetime
+
 
 def fname2dt(fpng):
     dt_str, satellite = os.path.splitext(os.path.basename(fpng))[0].split('_')
@@ -17,6 +18,7 @@ def dt2fname(dt, satellite):
 no_video_dirs = ['ice_path', 'water_path', 'optical_thickness', 'cloud_phase', 'cloud_top_height_temperature']
 if __name__ == "__main__":
 
+    START_TIME = datetime.datetime.now()
     parser = ArgumentParser(prog='ffmpeg_txt')
     parser.add_argument('--fdir', type=str, metavar='',
                         help='Top-level source directory\n')
@@ -81,3 +83,5 @@ if __name__ == "__main__":
                 f.write("duration {}\n".format(args.frame_rate))
 
     print("Finished creating video metadata file.\n")
+    END_TIME = datetime.datetime.now()
+    print('Time taken to execute {}: {}'.format(os.path.basename(__file__), END_TIME - START_TIME))
