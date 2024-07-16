@@ -88,7 +88,8 @@ ccrs_views =        {'lincoln': {'view_extent': [-130, 50, 76, 89],
 
 # quicklook settings
 ql_settings = {'proj_data': ccrs.PlateCarree(),
-               'proj_plot': ccrs.PlateCarree(),
+            #    'proj_plot': ccrs.PlateCarree(),
                'dpi': 300,
                'pad_inches': 0.0,
-               'bbox_inches': 'tight'}
+               'bbox_inches': 'tight',
+               'extent': [-80, -30, 71, 88]}

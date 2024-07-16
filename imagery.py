@@ -462,26 +462,32 @@ class Imagery:
         if self.quicklook_fdir is not None: # generate quicklook imagery
 
             try: # reduce risk since this is lower priority
-                # granule extent
-                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
-                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
-                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColor721", ql_dt_str, *gextent)
-                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+                # granule extent ignored for now since NRT 03 files don't have the right lat lon limits
+                # instead preset
+                # gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                gextent = util.plot_util.ql_settings['extent']
 
                 # generate figure
                 fig = plt.figure(figsize=(12, 12))
                 plt.style.use('default')
                 gs  = GridSpec(1, 1, figure=fig)
-                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+                ax = fig.add_subplot(gs[0], projection=ccrs.Orthographic(central_longitude=np.mean(gextent[:2]),
+                                                                         central_latitude=np.mean(gextent[2:])))
 
                 ax.pcolormesh(lon_2d, lat_2d, img_fci,
-                                shading='nearest',
-                                zorder=2,
-                                transform=util.plot_util.ql_settings['proj_data'])
+                            shading='nearest',
+                            zorder=2,
+                            transform=util.plot_util.ql_settings['proj_data'])
                 ax.set_xticks([])
                 ax.set_yticks([])
                 ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
                 ax.set_aspect('auto')
+
+                # save the figure
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                extent_xy = list(ax.get_xlim()) + list(ax.get_ylim())
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f})_({:.4f},{:.4f},{:.4f},{:.4f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColor721", ql_dt_str, *extent_xy, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
 
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
@@ -543,26 +549,32 @@ class Imagery:
         if self.quicklook_fdir is not None: # generate quicklook imagery
 
             try: # reduce risk since this is lower priority
-                # granule extent
-                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
-                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
-                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColor367", ql_dt_str, *gextent)
-                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+                # granule extent ignored for now since NRT 03 files don't have the right lat lon limits
+                # instead preset
+                # gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                gextent = util.plot_util.ql_settings['extent']
 
                 # generate figure
                 fig = plt.figure(figsize=(12, 12))
                 plt.style.use('default')
                 gs  = GridSpec(1, 1, figure=fig)
-                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+                ax = fig.add_subplot(gs[0], projection=ccrs.Orthographic(central_longitude=np.mean(gextent[:2]),
+                                                                         central_latitude=np.mean(gextent[2:])))
 
                 ax.pcolormesh(lon_2d, lat_2d, img_fci,
-                                shading='nearest',
-                                zorder=2,
-                                transform=util.plot_util.ql_settings['proj_data'])
+                            shading='nearest',
+                            zorder=2,
+                            transform=util.plot_util.ql_settings['proj_data'])
                 ax.set_xticks([])
                 ax.set_yticks([])
                 ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
                 ax.set_aspect('auto')
+
+                # save the figure
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                extent_xy = list(ax.get_xlim()) + list(ax.get_ylim())
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f})_({:.4f},{:.4f},{:.4f},{:.4f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColor367", ql_dt_str, *extent_xy, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
 
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
@@ -625,26 +637,32 @@ class Imagery:
         if self.quicklook_fdir is not None: # generate quicklook imagery
 
             try: # reduce risk since this is lower priority
-                # granule extent
-                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
-                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
-                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "TrueColor", ql_dt_str, *gextent)
-                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+                # granule extent ignored for now since NRT 03 files don't have the right lat lon limits
+                # instead preset
+                # gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                gextent = util.plot_util.ql_settings['extent']
 
                 # generate figure
                 fig = plt.figure(figsize=(12, 12))
                 plt.style.use('default')
                 gs  = GridSpec(1, 1, figure=fig)
-                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+                ax = fig.add_subplot(gs[0], projection=ccrs.Orthographic(central_longitude=np.mean(gextent[:2]),
+                                                                         central_latitude=np.mean(gextent[2:])))
 
                 ax.pcolormesh(lon_2d, lat_2d, rgb,
-                                shading='nearest',
-                                zorder=2,
-                                transform=util.plot_util.ql_settings['proj_data'])
+                            shading='nearest',
+                            zorder=2,
+                            transform=util.plot_util.ql_settings['proj_data'])
                 ax.set_xticks([])
                 ax.set_yticks([])
                 ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
                 ax.set_aspect('auto')
+
+                # save the figure
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                extent_xy = list(ax.get_xlim()) + list(ax.get_ylim())
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f})_({:.4f},{:.4f},{:.4f},{:.4f}).png".format(self.instrument.upper(), sat_fname.upper(), "TrueColor", ql_dt_str, *extent_xy, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
 
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
@@ -707,17 +725,17 @@ class Imagery:
         if self.quicklook_fdir is not None: # generate quicklook imagery
 
             try: # reduce risk since this is lower priority
-                # granule extent
-                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
-                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
-                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColorCirrus", ql_dt_str, *gextent)
-                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+                # granule extent ignored for now since NRT 03 files don't have the right lat lon limits
+                # instead preset
+                # gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                gextent = util.plot_util.ql_settings['extent']
 
                 # generate figure
                 fig = plt.figure(figsize=(12, 12))
                 plt.style.use('default')
                 gs  = GridSpec(1, 1, figure=fig)
-                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+                ax = fig.add_subplot(gs[0], projection=ccrs.Orthographic(central_longitude=np.mean(gextent[:2]),
+                                                                         central_latitude=np.mean(gextent[2:])))
 
                 ax.pcolormesh(lon_2d, lat_2d, img_fci,
                             shading='nearest',
@@ -727,6 +745,12 @@ class Imagery:
                 ax.set_yticks([])
                 ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
                 ax.set_aspect('auto')
+
+                # save the figure
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                extent_xy = list(ax.get_xlim()) + list(ax.get_ylim())
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f})_({:.4f},{:.4f},{:.4f},{:.4f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColorCirrus", ql_dt_str, *extent_xy, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
 
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
@@ -790,26 +814,32 @@ class Imagery:
         if self.quicklook_fdir is not None: # generate quicklook imagery
 
             try: # reduce risk since this is lower priority
-                # granule extent
-                gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
-                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
-                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColorIR", ql_dt_str, *gextent)
-                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
+                # granule extent ignored for now since NRT 03 files don't have the right lat lon limits
+                # instead preset
+                # gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
+                gextent = util.plot_util.ql_settings['extent']
 
                 # generate figure
                 fig = plt.figure(figsize=(12, 12))
                 plt.style.use('default')
                 gs  = GridSpec(1, 1, figure=fig)
-                ax = fig.add_subplot(gs[0], projection=util.plot_util.ql_settings['proj_plot'])
+                ax = fig.add_subplot(gs[0], projection=ccrs.Orthographic(central_longitude=np.mean(gextent[:2]),
+                                                                         central_latitude=np.mean(gextent[2:])))
 
                 ax.pcolormesh(lon_2d, lat_2d, img_fci,
-                                shading='nearest',
-                                zorder=2,
-                                transform=util.plot_util.ql_settings['proj_data'])
+                            shading='nearest',
+                            zorder=2,
+                            transform=util.plot_util.ql_settings['proj_data'])
                 ax.set_xticks([])
                 ax.set_yticks([])
                 ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
                 ax.set_aspect('auto')
+
+                # save the figure
+                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
+                extent_xy = list(ax.get_xlim()) + list(ax.get_ylim())
+                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f})_({:.4f},{:.4f},{:.4f},{:.4f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColorIR", ql_dt_str, *extent_xy, *gextent)
+                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
 
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
