@@ -46,6 +46,7 @@ class Imagery:
                  outdir,
                  geojson_fpath,
                  buoys,
+                 norway_ship,
                  mode,
                  quicklook_fdir,
                  verbose=False):
@@ -56,6 +57,7 @@ class Imagery:
         self.outdir          = outdir
         self.geojson_fpath   = geojson_fpath
         self.buoys           = buoys
+        self.norway_ship     = norway_ship
         self.mode            = mode
         self.quicklook_fdir  = quicklook_fdir
         self.verbose         = verbose
@@ -154,7 +156,93 @@ class Imagery:
             self.instrument = 'Unknown'
 
 
-    def get_buoy_data(self, json_fpath, API_KEY="kU7vw3YBcIvnxqTH8DlDeR08QTTfNYiZ", days=7, download_threshold_hrs=6, force_download=False):
+    def get_norway_icebreaker_data(self, url='http://vessel.npolar.io:8443/?token=asdfghjkl&mmsi=257275000', update_threshold_hrs=1, force_download=False):
+        """
+        Retrieves the Norway icebreaker data from a specified URL or a local JSON file.
+
+        Args:
+            url (str, optional): The URL to retrieve the data from. Defaults to 'http://vessel.npolar.io:8443/?token=asdfghjkl&mmsi=257275000'.
+            update_threshold_hrs (int, optional): The time threshold in hours for updating the data. If the difference between current time and last downloaded time exceeds this value, data will be update via the URL download. Defaults to 1 i.e., updates hourly.
+            force_download (bool, optional): Whether to force download the data even if a local file exists. Defaults to False.
+
+        Returns:
+            tuple: A tuple containing the longitude and latitude coordinates of the icebreaker.
+
+        Live Map: http://www.padodd.com/arcticmap/
+        """
+
+        # url = 'http://vessel.npolar.io:8443/?token=asdfghjkl&mmsi=257275000'
+
+        utc_now_dt = datetime.datetime.now(datetime.timezone.utc)
+        utc_now_dt = utc_now_dt.replace(tzinfo=None) # so that timedelta does not raise an error
+
+        if force_download:
+            try:
+                data = requests.get(url, timeout=(20, 30)).json()
+                slon, slat = data['geometry']['coordinates']
+                with open(self.norway_ship, 'w') as f: # save for next time
+                    json.dump(data, f)
+
+            except Exception as api_err:
+                print("Message [get_buoy_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                try:
+                    with open(self.norway_ship, 'r') as f:
+                        data = json.load(f)
+                    slon, slat = data['geometry']['coordinates']
+
+                except Exception as json_err:
+                    print("Message [get_buoy_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
+                    slon, slat = 0, 0
+
+            return slon, slat
+
+
+        if os.path.isfile(self.norway_ship):
+            with open(self.norway_ship, 'r') as f:
+                data = json.load(f)
+
+            # if less than time threshold, read old data; otherwise download from server and save to file
+            last_checked_dt = datetime.datetime.strptime(data['properties']['datetime_utc'], '%Y-%m-%dT%H:%M:%SZ')
+            if ((utc_now_dt - last_checked_dt) < datetime.timedelta(hours=update_threshold_hrs)) and (not force_download):
+                slon, slat = data['geometry']['coordinates']
+
+            else:
+                try:
+                    data = requests.get(url, timeout=(20, 30)).json()
+                    slon, slat = data['geometry']['coordinates']
+                    with open(self.norway_ship, 'w') as f: # save for next time
+                        json.dump(data, f)
+                except Exception as api_err:
+                    print("Message [get_buoy_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                    try:
+                        with open(self.norway_ship, 'r') as f:
+                            data = json.load(f)
+                        slon, slat = data['geometry']['coordinates']
+
+                    except Exception as json_err:
+                        print("Message [get_buoy_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
+                        slon, slat = 0, 0
+
+        else:
+            try:
+                data = requests.get(url, timeout=(20, 30)).json()
+                slon, slat = data['geometry']['coordinates']
+                with open(self.norway_ship, 'w') as f: # save for next time
+                    json.dump(data, f)
+            except Exception as api_err:
+                print("Message [get_buoy_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                try:
+                    with open(self.norway_ship, 'r') as f:
+                        data = json.load(f)
+                    slon, slat = data['geometry']['coordinates']
+
+                except Exception as json_err:
+                    print("Message [get_buoy_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
+                    slon, slat = 0, 0
+        return slon, slat
+
+
+    def get_buoy_data(self, API_KEY="kU7vw3YBcIvnxqTH8DlDeR08QTTfNYiZ", days=7, download_threshold_hrs=6, force_download=False):
         """
         Retrieves buoy data from a JSON file or downloads it from a server.
 
@@ -172,20 +260,24 @@ class Imagery:
         """
         import pandas as pd
 
-        fdir = os.path.dirname(os.path.abspath(json_fpath))
+        fdir = os.path.dirname(os.path.abspath(self.buoys))
         fields_str = '?field=time_stamp&field=latitude&field=longitude'
         # for field in fields:
         #     fields_str += 'field={}&'.format(field)
 
-        with open(json_fpath, 'r') as fp:
+        with open(self.buoys, 'r') as fp:
             urls = json.load(fp)
 
         # read metadata
         buoy_metadata_json = os.path.join(fdir, 'metadata.json')
-        meta = None
+
+        meta = {}
         if os.path.isfile(buoy_metadata_json):
             with open(buoy_metadata_json, "r") as fm:
                 meta = json.load(fm)
+
+        if meta is None:
+            meta = {}
 
         utc_now_dt = datetime.datetime.now(datetime.timezone.utc)
         utc_now_dt = utc_now_dt.replace(tzinfo=None) # so that timedelta does not raise an error
@@ -198,8 +290,9 @@ class Imagery:
 
             # essentially force download; read old data only if it's actually available
             check_dt = utc_now_dt - datetime.timedelta(hours=download_threshold_hrs+1)
-            if os.path.isfile(buoy_download_json) and (meta is not None):
-                check_dt = datetime.datetime.strptime(meta['last_downloaded_buoy{}'.format(bname.upper())], "%Y-%m-%d_%H:%M:%S")
+            key = 'last_downloaded_buoy{}'.format(bname.upper())
+            if os.path.isfile(buoy_download_json) and (meta is not None) and (len(meta) > 0) and (key in list(meta.keys())):
+                check_dt = datetime.datetime.strptime(meta[key], "%Y-%m-%d_%H:%M:%S")
 
             # if less than time threshold, read old data; otherwise download from server and save to file
             if ((utc_now_dt - check_dt) < datetime.timedelta(hours=download_threshold_hrs)) and (not force_download):
@@ -209,12 +302,19 @@ class Imagery:
                     df   = pd.DataFrame(data)
             else:
                 # print("Message [get_buoy_data]: Downloading data for: Buoy {}".format(bname))
-                data = requests.get(url, headers={'Authorization':'Bearer {}'.format(API_KEY)}, timeout=(20, 30)).json()
-                df   = pd.DataFrame(data)
-                with open(buoy_download_json, 'w') as f: # save for next time
-                    json.dump(data, f)
-                meta['last_downloaded_buoy{}'.format(bname.upper())] = utc_now_dt.strftime("%Y-%m-%d_%H:%M:%S")
+                try:
+                    data = requests.get(url, headers={'Authorization':'Bearer {}'.format(API_KEY)}, timeout=(20, 30)).json()
+                    df   = pd.DataFrame(data)
+                    with open(buoy_download_json, 'w') as f: # save for next time
+                        json.dump(data, f)
 
+                    meta['last_downloaded_buoy{}'.format(bname.upper())] = utc_now_dt.strftime("%Y-%m-%d_%H:%M:%S")
+
+                except Exception as api_err:
+                    print("Message [get_buoy_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                    with open(buoy_download_json, 'r') as f:
+                        data = json.load(f)
+                        df   = pd.DataFrame(data)
 
             with open(buoy_metadata_json, 'w') as fm: # save metadata for next time
                 json.dump(meta, fm)
@@ -280,7 +380,7 @@ class Imagery:
 
     def create_metadata(self):
         now = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-        metadata = {'system': os.uname()[1], 'created': now, 'data_source': self.data_source, 'author': 'Vikas Nataraja'}
+        metadata = {'system': os.uname()[0], 'created': now, 'data_source': self.data_source, 'author': 'Vikas Nataraja'}
         return metadata
 
 
@@ -338,7 +438,7 @@ class Imagery:
 
         # visualize buoys
         if self.buoys is not None:
-            dt, lons, lats = self.get_buoy_data(self.buoys)
+            dt, lons, lats = self.get_buoy_data()
 
             # dt_text_box = ''
             buoy_ids = list(dt.keys())
@@ -352,8 +452,16 @@ class Imagery:
                 x_offset, y_offset = 1.5, -0.2 # offset for text
                 if text == "J":
                     x_offset, y_offset = 1.5, -0.1 # buoy J is drifting east, others are drifting west for the most part
-                ax.text(lons[bid][-1] + x_offset, lats[bid][-1] + y_offset, text, ha="center", va="center", transform=util.plot_util.proj_data, color=colors[i],
-                        fontsize=10, fontweight="bold", zorder=2)
+                ax.text(lons[bid][-1] + x_offset, lats[bid][-1] + y_offset, text, ha="center", va="center", transform=util.plot_util.proj_data, color=colors[i], fontsize=10, fontweight="bold", zorder=2)
+
+        # visualize Norwegian ice breaker
+        if self.norway_ship is not None:
+            slon, slat = self.get_norway_icebreaker_data()
+            # diamond marker
+            ax.scatter(slon, slat, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=80, zorder=2, alpha=1)
+            x_offset, y_offset = 2.5, -0.2
+            ax.text(slon + x_offset, slat + y_offset, '3YYQ', color='magenta', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=10, fontweight="bold", zorder=2)
+
 
 
     def convert_ir_ctp(self, ctp_ir_arr):
