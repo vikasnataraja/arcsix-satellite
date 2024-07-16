@@ -5,6 +5,7 @@ import subprocess
 from argparse import ArgumentParser
 
 no_video_dirs = ['ice_path', 'water_path', 'optical_thickness', 'cloud_phase', 'cloud_top_height_temperature']
+
 if __name__ == "__main__":
 
     START_TIME = datetime.datetime.now()
@@ -21,10 +22,9 @@ if __name__ == "__main__":
             continue
 
         mp4name = os.path.join(args.fdir, sub) + '.mp4'
-        print(mp4name)
 
         if os.path.isfile(mp4name): # if it already exists then delete it
-            print("File {} already exists...deleting before creating new file".format(mp4name))
+            print("Message [create_video]: File {} already exists...deleting before creating new file".format(mp4name))
             os.remove(mp4name)
 
         meta_file = os.path.join(args.fdir, sub, 'create_video_metadata.txt')
@@ -37,7 +37,7 @@ if __name__ == "__main__":
             ret = subprocess.run(command, capture_output=True, check=True)
             # print(' '.join(ret.args))
         except Exception as err:
-            print(err)
+            print("Error [create_video]: ", err)
 
     print("Finished creating video files in {}.\n".format(args.fdir))
     END_TIME = datetime.datetime.now()
