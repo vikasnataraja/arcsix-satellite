@@ -458,7 +458,7 @@ class Imagery:
         if self.norway_ship is not None:
             slon, slat = self.get_norway_icebreaker_data()
             # diamond marker
-            ax.scatter(slon, slat, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=80, zorder=2, alpha=1)
+            ax.scatter(slon, slat, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=60, zorder=2, alpha=1)
             x_offset, y_offset = 2.5, -0.2
             ax.text(slon + x_offset, slat + y_offset, '3YYQ', color='magenta', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=10, fontweight="bold", zorder=2)
 
