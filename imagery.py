@@ -1051,7 +1051,7 @@ class Imagery:
         ax01 = fig.add_subplot(gs[1], projection=proj_plot)
         y01 = ax01.pcolormesh(lon_2d, lat_2d, im_lwp_1621,
                         shading='nearest',
-                        zorder=1,
+                        zorder=2,
                         cmap=cmap,
                         transform=util.plot_util.proj_data)
         # ax01.set_boundary(boundary, transform=proj_data)
@@ -1173,7 +1173,7 @@ class Imagery:
         ax01 = fig.add_subplot(gs[1], projection=proj_plot)
         y01 = ax01.pcolormesh(lon_2d, lat_2d, im_iwp_1621,
                             shading='nearest',
-                            zorder=1,
+                            zorder=2,
                             cmap=cmap,
                             transform=util.plot_util.proj_data)
         title = "{} ({}) IWP (1621) - ".format(self.instrument, self.satellite) + dt_title
@@ -1265,7 +1265,7 @@ class Imagery:
         ax01 = fig.add_subplot(gs[1], projection=proj_plot)
         y01 = ax01.pcolormesh(lon_2d, lat_2d, im_cot_1621,
                             shading='nearest',
-                            zorder=1,
+                            zorder=2,
                             cmap=cmap,
                             transform=util.plot_util.proj_data)
 
@@ -1365,12 +1365,13 @@ class Imagery:
         ax01 = fig.add_subplot(gs[1], projection=proj_plot)
         im_ctp_ir = self.convert_ir_ctp(im_ctp_ir)
         labels = np.unique(im_ctp_ir).astype('int8') # index; for legend
+        ctp_ir_cmap = matplotlib.colors.ListedColormap(util.plot_util.ctp_ir_cmap_arr[labels])
 
         y01 = ax01.pcolormesh(lon_2d, lat_2d, im_ctp_ir,
-                    shading='nearest',
-                    zorder=2,
-                    cmap=util.plot_util.ctp_ir_cmap,
-                    transform=util.plot_util.proj_data)
+                              shading='nearest',
+                              zorder=2,
+                              cmap=ctp_ir_cmap,
+                              transform=util.plot_util.proj_data)
 
         title = "{} ({}) Cloud Phase (IR) - ".format(self.instrument, self.satellite) + dt_title
         self.add_ancillary(ax01, title=title, scale=1.4)
@@ -1428,7 +1429,7 @@ class Imagery:
         im_cth_binned = self.bin_cth_to_class(im_cth)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_cth_binned,
                             shading='nearest',
-                            zorder=1,
+                            zorder=2,
                             cmap=util.plot_util.cth_cmap,
                             transform=util.plot_util.proj_data)
 
@@ -1462,7 +1463,7 @@ class Imagery:
         ax01 = fig.add_subplot(gs[1], projection=proj_plot)
         y01 = ax01.pcolormesh(lon_2d, lat_2d, im_ctt_binned,
                             shading='nearest',
-                            zorder=1,
+                            zorder=2,
                             cmap=ctt_cmap,
                             transform=util.plot_util.proj_data)
 

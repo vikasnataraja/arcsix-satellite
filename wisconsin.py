@@ -499,6 +499,9 @@ def run(args):
             exist_start_dt, exist_end_dt = get_start_end_dates_metadata(fdir_out_dt)
             print('Message [run_wisconsin]: metadata.txt file will be removed from {}'.format(os.path.join(fdir_out_dt, 'metadata.txt')))
             os.remove(os.path.join(fdir_out_dt, 'metadata.txt'))
+        else:
+            exist_end_dt = None
+            exist_start_dt = None
 
 
         with open(os.path.join(fdir_out_dt, 'metadata.txt'), "w") as f:
@@ -517,11 +520,12 @@ def run(args):
                                     overwrite=False)
 
         for product in args.products:
+            print('Message [wisconsin_run]: Searching for: ', product)
             product_counter[product] = wisc.download_asipscli_file(product=product, outdir=fdir_out_dt)
 
         # Save metadata start and end dates
         oldest_dt, recent_dt = wisc.report_times_for_metadata()
-        if exist_end_dt > recent_dt:
+        if (exist_end_dt is not None) and (exist_end_dt > recent_dt):
             recent_dt = exist_end_dt
 
         if oldest_dt == recent_dt:
