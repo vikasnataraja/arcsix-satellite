@@ -184,14 +184,14 @@ class Imagery:
                     json.dump(data, f)
 
             except Exception as api_err:
-                print("Message [get_buoy_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                print("Message [get_norway_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
                 try:
                     with open(self.norway_ship, 'r') as f:
                         data = json.load(f)
                     slon, slat = data['geometry']['coordinates']
 
                 except Exception as json_err:
-                    print("Message [get_buoy_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
+                    print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
                     slon, slat = 0, 0
 
             return slon, slat
@@ -202,7 +202,16 @@ class Imagery:
                 data = json.load(f)
 
             # if less than time threshold, read old data; otherwise download from server and save to file
-            last_checked_dt = datetime.datetime.strptime(data['properties']['datetime_utc'], '%Y-%m-%dT%H:%M:%SZ')
+            try: # seems to be fluctuating between different time formats
+                last_checked_dt = datetime.datetime.strptime(data['properties']['datetime_utc'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            except Exception as time_err:
+                print('Message [get_norway_icebreaker_data]: Error with time: {}, trying with different format...'.format(time_err))
+                try:
+                    last_checked_dt = datetime.datetime.strptime(data['properties']['datetime_utc'], '%Y-%m-%dT%H:%M:%SZ')
+                except Exception as another_time_err:
+                    print('Message [get_norway_icebreaker_data]: Error with time again: {}, returning 0, 0'.format(another_time_err))
+                    return 0, 0
+
             if ((utc_now_dt - last_checked_dt) < datetime.timedelta(hours=update_threshold_hrs)) and (not force_download):
                 slon, slat = data['geometry']['coordinates']
 
@@ -213,14 +222,14 @@ class Imagery:
                     with open(self.norway_ship, 'w') as f: # save for next time
                         json.dump(data, f)
                 except Exception as api_err:
-                    print("Message [get_buoy_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                    print("Message [get_norway_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
                     try:
                         with open(self.norway_ship, 'r') as f:
                             data = json.load(f)
                         slon, slat = data['geometry']['coordinates']
 
                     except Exception as json_err:
-                        print("Message [get_buoy_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
+                        print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
                         slon, slat = 0, 0
 
         else:
@@ -230,14 +239,14 @@ class Imagery:
                 with open(self.norway_ship, 'w') as f: # save for next time
                     json.dump(data, f)
             except Exception as api_err:
-                print("Message [get_buoy_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                print("Message [get_norway_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
                 try:
                     with open(self.norway_ship, 'r') as f:
                         data = json.load(f)
                     slon, slat = data['geometry']['coordinates']
 
                 except Exception as json_err:
-                    print("Message [get_buoy_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
+                    print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
                     slon, slat = 0, 0
         return slon, slat
 
