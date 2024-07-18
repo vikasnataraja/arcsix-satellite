@@ -191,8 +191,8 @@ class Imagery:
                     slon, slat = data['geometry']['coordinates']
 
                 except Exception as json_err:
-                    print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
-                    slon, slat = 0, 0
+                    print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                    slon, slat = np.nan, np.nan
 
             return slon, slat
 
@@ -209,8 +209,8 @@ class Imagery:
                 try:
                     last_checked_dt = datetime.datetime.strptime(data['properties']['datetime_utc'], '%Y-%m-%dT%H:%M:%SZ')
                 except Exception as another_time_err:
-                    print('Message [get_norway_icebreaker_data]: Error with time again: {}, returning 0, 0'.format(another_time_err))
-                    return 0, 0
+                    print('Message [get_norway_icebreaker_data]: Error with time again: {}, returning nan, nan'.format(another_time_err))
+                    return np.nan, np.nan
 
             if ((utc_now_dt - last_checked_dt) < datetime.timedelta(hours=update_threshold_hrs)) and (not force_download):
                 slon, slat = data['geometry']['coordinates']
@@ -229,8 +229,8 @@ class Imagery:
                         slon, slat = data['geometry']['coordinates']
 
                     except Exception as json_err:
-                        print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
-                        slon, slat = 0, 0
+                        print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                        slon, slat = np.nan, np.nan
 
         else:
             try:
@@ -246,8 +246,8 @@ class Imagery:
                     slon, slat = data['geometry']['coordinates']
 
                 except Exception as json_err:
-                    print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (0, 0)..".format(json_err))
-                    slon, slat = 0, 0
+                    print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                    slon, slat = np.nan, np.nan
         return slon, slat
 
 
@@ -466,6 +466,8 @@ class Imagery:
         # visualize Norwegian ice breaker
         if self.norway_ship is not None:
             slon, slat = self.get_norway_icebreaker_data()
+            if (np.isnan(slon)) or (np.isnan(slat)):
+                print('Message [add_ancillary]: Norwegian Icebreaker will not be plotted.')
             # diamond marker
             ax.scatter(slon, slat, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=60, zorder=2, alpha=1)
             x_offset, y_offset = 1.5, -0.1
