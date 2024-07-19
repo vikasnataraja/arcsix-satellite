@@ -29,8 +29,8 @@ wisc_info = {
                                 },
 
     'CLDPROP_L2_VIIRS_SNPP':   {
-                                'api_fname' : 'CLDPROP_L2_VIIRS_SNP',
-                                'cli_fname' : 'CLDPROP_L2_VIIRS_SNP_NRT',
+                                'api_fname' : 'CLDPROP_L2_VIIRS_SNPP',
+                                'cli_fname' : 'CLDPROP_L2_VIIRS_SNPP_NRT',
                                 'version'   : '1.1.3dev9',
                                 'collection': '011',
                                 },

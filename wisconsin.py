@@ -142,7 +142,7 @@ class WisconsinDownload:
             return {}
 
         if (jout['status'] != 'success'):
-            print("Message [get_file_metadata]: Failed to run command: {}".format(command))
+            print("Message [get_file_metadata]: Failed to run command: {}".format(' '.join(command)))
             return {}
 
         return jout
