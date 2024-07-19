@@ -688,7 +688,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             if 'uwssec' in geo_file.lower():
                 data_source = 'UWisc SSEC'
             else:
-                data_source = 'NASA LANCE DAAC'
+                data_source = 'NASA LAADS DAAC'
 
             arcsix_imagery = Imagery(data_source=data_source,
                                      satellite=satellite,
