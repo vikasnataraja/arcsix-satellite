@@ -813,8 +813,6 @@ if __name__ == "__main__":
     start_dt_hhmm_str = start_dt_hhmm.strftime('%Y-%m-%d-%H%M')
     end_dt_hhmm_str   = end_dt_hhmm.strftime('%Y-%m-%d-%H%M')
 
-    outdir_dt =  start_dt_hhmm_str + '_' + end_dt_hhmm_str
-
     print("==============================================================================================")
     print("Message [visualize_satellites]: Start: {}, End: {}".format(start_dt_hhmm_str, end_dt_hhmm_str))
     print("==============================================================================================")
