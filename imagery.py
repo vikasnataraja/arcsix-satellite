@@ -248,6 +248,12 @@ class Imagery:
                 except Exception as json_err:
                     print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
                     slon, slat = np.nan, np.nan
+
+        # so that it does not go out of the map bounds and stretch the image
+        if slon >= 49 or slon <= -125 or slat <= 76 or slat >= 87:
+            slon = np.nan
+            slat = np.nan
+
         return slon, slat
 
 
