@@ -688,7 +688,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             if 'uwssec' in geo_file.lower():
                 data_source = 'UWisc SSEC'
             else:
-                data_source = 'NASA LAADS DAAC'
+                data_source = 'NASA DAAC'
 
             arcsix_imagery = Imagery(data_source=data_source,
                                      satellite=satellite,
@@ -783,6 +783,8 @@ if __name__ == "__main__":
                         'Example:  --geojson my/path/to/geofile.json\n \n')
     parser.add_argument('--buoys', type=str, metavar='', default=None, help='Path to the JSON file containing URLs to the buoys csv data')
     parser.add_argument('--norway_ship', type=str, metavar='', default=None, help='Path to the JSON file where icebreaker data is/will be stored')
+    parser.add_argument('--start_date', type=str, default=None, help='yyyymmddhhmm format')
+    parser.add_argument('--end_date', type=str, default=None, help='yyyymmddhhmm format')
     parser.add_argument('--mode', type=str, metavar='', default='lincoln', help='One of "baffin", "lincoln", or "platypus" ')
     parser.add_argument("--quicklook_fdir", type=str, default=None, help="Path to directory where quicklook images will be saved")
     args = parser.parse_args()
@@ -804,16 +806,17 @@ if __name__ == "__main__":
 
     subdirs = sorted(subdirs)
 
-    start_dt_hhmm, end_dt_hhmm = get_start_end_dates_metadata(subdirs[-1])
+    if args.start_date is not None and args.end_date is not None:
+        start_dt_hhmm = datetime.datetime.strptime(args.start_date, '%Y%m%d%H%M')
+        end_dt_hhmm   = datetime.datetime.strptime(args.end_date, '%Y%m%d%H%M')
 
-    start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
-    print("Message [visualize_satellites]: Start time and end times were too far apart or not far enough...limiting to {} hour gap.".format(args.max_hours))
-
+    else:
+        start_dt_hhmm, end_dt_hhmm = get_start_end_dates_metadata(subdirs[-1])
+        start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
+        print("Message [visualize_satellites]: Start time and end times were too far apart or not far enough...limiting to {} hour gap.".format(args.max_hours))
 
     start_dt_hhmm_str = start_dt_hhmm.strftime('%Y-%m-%d-%H%M')
     end_dt_hhmm_str   = end_dt_hhmm.strftime('%Y-%m-%d-%H%M')
-
-    outdir_dt =  start_dt_hhmm_str + '_' + end_dt_hhmm_str
 
     print("==============================================================================================")
     print("Message [visualize_satellites]: Start: {}, End: {}".format(start_dt_hhmm_str, end_dt_hhmm_str))
@@ -827,14 +830,13 @@ if __name__ == "__main__":
     for fdir in tqdm(subdirs):
         dt = os.path.basename(fdir)
         print("Currently analyzing:", dt) # date
-        year, month, date, hour, minute, sec, extent = get_metadata(fdir)
+        # year, month, date, hour, minute, sec, extent = get_metadata(fdir)
 
         outdir = args.outdir
 
         ret = 0
-        if args.nrt:
-            ret += save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
-            ret += save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
+        ret += save_to_file_modis_viirs_ref_geo(fdir, outdir, extent=None, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
+        # ret += save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent=None, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
 
         if ret == 0:
             manual_list.append(fdir)
