@@ -749,15 +749,14 @@ if __name__ == "__main__":
     parser.add_argument("--fdir",  default=None,  type=str, help="Path to directory containing raw MODIS/VIIRS HDF files")
     parser.add_argument("--outdir", type=str, default=None, help="Path to directory where images will be saved")
     parser.add_argument('--ndir_recent', type=int, metavar='', default=None, help='Time range in terms of sub-directories. For example, if --ndir_recent 5, then the 5 most recent (based on filenames) datetime ranges will be used to create data')
-    parser.add_argument('--max_hours', type=int, metavar='', default=3, help='Maximum time range in hours. For example, if --max_hours 5, then the 5 most recent hours from the last available satellite time are used')
     parser.add_argument("--nrt", action='store_true', help="Enable --nrt to process VIIRS L1b and 03 products, and MODIS L1b, 03, and clds")
     parser.add_argument('--geojson', type=str, metavar='',
                         help='Path to a geoJSON file containing the extent of interest coordinates\n'\
                         'Example:  --geojson my/path/to/geofile.json\n \n')
     parser.add_argument('--buoys', type=str, metavar='', default=None, help='Path to the JSON file containing URLs to the buoys csv data')
     parser.add_argument('--norway_ship', type=str, metavar='', default=None, help='Path to the JSON file where icebreaker data is/will be stored')
-    parser.add_argument('--start_date', type=str, default=None, help='yyyymmddhhmm format')
-    parser.add_argument('--end_date', type=str, default=None, help='yyyymmddhhmm format')
+    parser.add_argument('--start_time', type=str, default=None, help='hhmm format')
+    parser.add_argument('--end_time', type=str, default=None, help='hhmm format')
     parser.add_argument('--mode', type=str, metavar='', default='lincoln', help='One of "baffin", "lincoln", or "platypus" ')
     parser.add_argument("--quicklook_fdir", type=str, default=None, help="Path to directory where quicklook images will be saved")
     args = parser.parse_args()
@@ -779,28 +778,27 @@ if __name__ == "__main__":
 
     subdirs = sorted(subdirs)
 
-    if args.start_date is not None and args.end_date is not None:
-        start_dt_hhmm = datetime.datetime.strptime(args.start_date, '%Y%m%d%H%M')
-        end_dt_hhmm   = datetime.datetime.strptime(args.end_date, '%Y%m%d%H%M')
-
-    else:
-        start_dt_hhmm, end_dt_hhmm = get_start_end_dates_metadata(subdirs[-1])
-        start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
-        print("Message [visualize_satellites]: Start time and end times were too far apart or not far enough...limiting to {} hour gap.".format(args.max_hours))
-
-    start_dt_hhmm_str = start_dt_hhmm.strftime('%Y-%m-%d-%H%M')
-    end_dt_hhmm_str   = end_dt_hhmm.strftime('%Y-%m-%d-%H%M')
-
-    print("==============================================================================================")
-    print("Message [visualize_satellites]: Start: {}, End: {}".format(start_dt_hhmm_str, end_dt_hhmm_str))
-    print("==============================================================================================")
-
     if (args.ndir_recent is not None) and (len(subdirs) >= args.ndir_recent):
         subdirs = subdirs[-args.ndir_recent:]
 
     print("Message [visualize_satellites]: {} sub-directories will be analyzed".format(len(subdirs)))
 
     for fdir in tqdm(subdirs):
+
+        start_date = os.path.basename(fdir) + args.start_time
+        end_date   = os.path.basename(fdir) + args.end_time
+        start_dt_hhmm = datetime.datetime.strptime(start_date, '%Y-%m-%d%H%M')
+        end_dt_hhmm   = datetime.datetime.strptime(end_date, '%Y-%m-%d%H%M')
+
+        start_dt_hhmm_str = start_dt_hhmm.strftime('%Y-%m-%d-%H%M')
+        end_dt_hhmm_str   = end_dt_hhmm.strftime('%Y-%m-%d-%H%M')
+
+        print("==============================================================================================")
+        print("Message [visualize_satellites]: Start: {}, End: {}".format(start_dt_hhmm_str, end_dt_hhmm_str))
+        print("==============================================================================================")
+
+
+
         dt = os.path.basename(fdir)
         print("Currently analyzing:", dt) # date
         # year, month, date, hour, minute, sec, extent = get_metadata(fdir)
