@@ -250,7 +250,7 @@ class Imagery:
                     slon, slat = np.nan, np.nan
 
         # so that it does not go out of the map bounds and stretch the image
-        if slon >= 49 or slon <= -125 or slat <= 76 or slat >= 87:
+        if (slon >= 49) or (slon <= -125) or (slat <= 76) or (slat >= 87):
             slon = np.nan
             slat = np.nan
 

@@ -361,8 +361,6 @@ def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, bu
 
     print("Found {} overpasses".format(n_obs))
 
-    valid_count = 0 # just for reporting
-
     start_dt_str = start_dt.strftime('%Y-%m-%d-%H%M')
     end_dt_str   = end_dt.strftime('%Y-%m-%d-%H%M')
 
@@ -382,6 +380,7 @@ def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, bu
     print("Message [modis_viirs_cld_geo]: Start datetime:{}, End datetime: {}".format(start_dt_str, end_dt_str))
     print("Warning [modis_viirs_cld_geo]: Start datetime was changed to catch more data and account for latency")
 
+    report = [] # for reporting
     for i in tqdm(range(n_obs)):
         try:
 
@@ -392,14 +391,14 @@ def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, bu
             bgeo_file = os.path.basename(geo_file)
             yyyydoy_hhmm = bgeo_file.split('.')[1][1:] + '.' + bgeo_file.split('.')[2]
 
-            print("Message [modis_viirs_cld_geo]: Processing: ", bgeo_file)
+            # print("Message [modis_viirs_cld_geo]: Processing: ", bgeo_file)
             if yyyydoy_hhmm in exist_acq_dts: # if already processed, then skip
-                print("Message [modis_viirs_cld_geo]: Skipping {} as it has likely already been processed previously".format(bgeo_file))
+                # print("Message [modis_viirs_cld_geo]: Skipping {} as it has likely already been processed previously".format(bgeo_file))
                 continue
 
 
             if not within_range(geo_file, start_dt, end_dt):
-                print("Message [modis_viirs_cld_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(geo_file, start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
+                # print("Message [modis_viirs_cld_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(geo_file, start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
                 continue
 
             acq_dt = os.path.basename(geo_file).split('.')[1] + '.' + os.path.basename(geo_file).split('.')[2]
@@ -468,16 +467,15 @@ def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, bu
             _ = arcsix_l2.plot_cloud_phase(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp_swir=ctp, ctp_ir=ctp_ir)
             _ = arcsix_l2.plot_cloud_top(lon_2d=lon2d_5km, lat_2d=lat2d_5km, cth=cth, ctt=ctt)
 
-            valid_count += 1
+            output_str = 'Processed {} acquired by {} from {}'.format(acq_dt, satellite, data_source)
+            report.append(output_str)
+            # print("Message [modis_viirs_ref_geo]: Successfully processed: ", acq_dt)
 
         except Exception as err:
-            print(err)
+            print("Error [modis_viirs_cld_geo]:", err)
             continue
 
-    if valid_count > 0:
-        return 1
-    else:
-        return 0
+    return report
 
 
 def get_modis_viirs_ref_geo(fdir):
@@ -572,8 +570,6 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
 
     print("Found {} overpasses".format(n_obs))
 
-    valid_count = 0 # just for reporting
-
     start_dt_str = start_dt.strftime('%Y-%m-%d-%H%M')
     end_dt_str   = end_dt.strftime('%Y-%m-%d-%H%M')
     print("Message [modis_viirs_ref_geo]: Start datetime:{}, End datetime: {}".format(start_dt_str, end_dt_str))
@@ -590,6 +586,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                         exist_acq_dt = datetime.datetime.strptime(''.join(f.split('_')[:-1]), '%Y-%m-%d-%H%MZ')
                         exist_acq_dts.append(exist_acq_dt.strftime("%Y%j.%H%M"))
 
+    report = [] # for reporting
     for i in tqdm(range(n_obs)):
         try:
             # geometries/geolocation file
@@ -599,9 +596,9 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             bgeo_file = os.path.basename(geo_file)
             yyyydoy_hhmm = bgeo_file.split('.')[1][1:] + '.' + bgeo_file.split('.')[2]
 
-            print("Message [modis_viirs_ref_geo]: Processing: ", bgeo_file)
+            # print("Message [modis_viirs_ref_geo]: Processing: ", bgeo_file)
             if yyyydoy_hhmm in exist_acq_dts: # if already processed, then skip
-                print("Message [modis_viirs_ref_geo]: Skipping {} as it has likely already been processed previously".format(bgeo_file))
+                # print("Message [modis_viirs_ref_geo]: Skipping {} as it has likely already been processed previously".format(bgeo_file))
                 continue
 
 
@@ -613,17 +610,17 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                     viirs_start_dt = start_dt - datetime.timedelta(hours=1)
                 elif ((end_dt - start_dt) > datetime.timedelta(hours=3)):
                     viirs_start_dt = end_dt - datetime.timedelta(hours=3)
-                    print("Message [visualize_satellites]: Start time and end times were too far apart...limiting to 3 hour gap.")
+                    # print("Message [visualize_satellites]: Start time and end times were too far apart...limiting to 3 hour gap.")
                 else:
                     viirs_start_dt = start_dt
 
                 if not within_range(geo_file, viirs_start_dt, end_dt):
-                    print("Message [modis_viirs_ref_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(bgeo_file, viirs_start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
+                    # print("Message [modis_viirs_ref_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(bgeo_file, viirs_start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
                     continue
 
             else: # for MODIS keep latency as is
                 if not within_range(geo_file, start_dt, end_dt):
-                    print("Message [modis_viirs_ref_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(bgeo_file, start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
+                    # print("Message [modis_viirs_ref_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(bgeo_file, start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
                     continue
 
             ########################################################################################################################
@@ -714,17 +711,15 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                 # 11micron-1.6-2.1 radiance
                 _ = arcsix_imagery.create_false_color_ir_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=rad_11000, green=rad_1640, blue=rad_2130)
 
-            valid_count += 1
-            print("Message [modis_viirs_ref_geo]: Successfully processed: ", acq_dt)
+            output_str = 'Processed {} acquired by {} from {}'.format(acq_dt, satellite, data_source)
+            report.append(output_str)
+            # print("Message [modis_viirs_ref_geo]: Successfully processed: ", acq_dt)
 
         except Exception as err:
             print("Error [modis_viirs_ref_geo]:", err)
             continue
 
-    if valid_count > 0:
-        return 1
-    else:
-        return 0
+    return report
 
 ########################################################################################################################
 
@@ -829,18 +824,26 @@ if __name__ == "__main__":
 
         outdir = args.outdir
 
-        ret = 0
         if args.nrt:
-            ret += save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
-            ret += save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
+            ret_l1 = save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
 
-        if ret == 0:
-            manual_list.append(fdir)
-            continue
+            if len(ret_l1) > 0:
+                print('Message [visualize_satellites] Level-1 products visualized for:')
+                for i in ret_l1:
+                    print(ret_l1[i])
+            else:
+                print('Message [visualize_satellites] No Level-1 products were processed on this run')
+
+            ret_l2 = save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
+
+            if len(ret_l2) > 0:
+                print('Message [visualize_satellites] Level-2 products visualized for:')
+                for i in ret_l2:
+                    print(ret_l2[i])
+            else:
+                print('Message [visualize_satellites] No Level-2 products were processed on this run')
 
 
-    print("Missed: ", manual_list)
-    print("Finished!")
 
     END_TIME = datetime.datetime.now()
     print('Time taken to execute {}: {}'.format(os.path.basename(__file__), END_TIME - START_TIME))
