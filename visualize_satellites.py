@@ -595,36 +595,9 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             # geometries/geolocation file
             geo_file    = f03[i]
 
-            # check if the file has already been processed
-            bgeo_file = os.path.basename(geo_file)
-            yyyydoy_hhmm = bgeo_file.split('.')[1][1:] + '.' + bgeo_file.split('.')[2]
-
-            print("Message [modis_viirs_ref_geo]: Processing: ", bgeo_file)
-            if yyyydoy_hhmm in exist_acq_dts: # if already processed, then skip
-                print("Message [modis_viirs_ref_geo]: Skipping {} as it has likely already been processed previously".format(bgeo_file))
+            if not within_range(geo_file, start_dt, end_dt):
+                print("Message [modis_viirs_ref_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(geo_file, start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
                 continue
-
-
-            ########################################################################################################################
-            # # add an extra hour of latency if necessary as they can sometimes be slow
-            if os.path.basename(geo_file).startswith('V'):
-
-                if (end_dt - start_dt) < datetime.timedelta(hours=2):
-                    viirs_start_dt = start_dt - datetime.timedelta(hours=1)
-                elif ((end_dt - start_dt) > datetime.timedelta(hours=3)):
-                    viirs_start_dt = end_dt - datetime.timedelta(hours=3)
-                    print("Message [visualize_satellites]: Start time and end times were too far apart...limiting to 3 hour gap.")
-                else:
-                    viirs_start_dt = start_dt
-
-                if not within_range(geo_file, viirs_start_dt, end_dt):
-                    print("Message [modis_viirs_ref_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(bgeo_file, viirs_start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
-                    continue
-
-            else: # for MODIS keep latency as is
-                if not within_range(geo_file, start_dt, end_dt):
-                    print("Message [modis_viirs_ref_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(bgeo_file, start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
-                    continue
 
             ########################################################################################################################
 
