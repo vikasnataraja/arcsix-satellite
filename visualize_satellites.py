@@ -827,21 +827,21 @@ if __name__ == "__main__":
         if args.nrt:
             ret_l1 = save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
 
-            # if len(ret_l1) > 0:
-            #     print('Message [visualize_satellites] Level-1 products visualized for:')
-            #     for i in ret_l1:
-            #         print(ret_l1[i])
-            # else:
-            #     print('Message [visualize_satellites] No Level-1 products were processed on this run')
+            if len(ret_l1) > 0:
+                print('Message [visualize_satellites] Level-1 products visualized for:')
+                for i in ret_l1:
+                    print(i)
+            else:
+                print('Message [visualize_satellites] No Level-1 products were processed on this run')
 
             ret_l2 = save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
 
-            # if len(ret_l2) > 0:
-            #     print('Message [visualize_satellites] Level-2 products visualized for:')
-            #     for i in ret_l2:
-            #         print(ret_l2[i])
-            # else:
-            #     print('Message [visualize_satellites] No Level-2 products were processed on this run')
+            if len(ret_l2) > 0:
+                print('Message [visualize_satellites] Level-2 products visualized for:')
+                for j in ret_l2:
+                    print(j)
+            else:
+                print('Message [visualize_satellites] No Level-2 products were processed on this run')
 
 
 
