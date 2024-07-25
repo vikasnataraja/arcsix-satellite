@@ -81,7 +81,7 @@ ccrs_views =        {'lincoln': {'view_extent': [-130, 50, 76, 89],
                     'ca_archipelago':   {'view_extent': [-140, -30, 75.5, 89.5],
                                         'vlon':         -70,
                                         'vlat':          84},
-                    'baffin':    {'view_extent': [-130, -40, 67, 84],
+                    'baffin':    {'view_extent': [-100, -40, 67, 84],
                                 'vlon':         -60,
                                 'vlat':          84},
                 }
