@@ -817,7 +817,7 @@ if __name__ == "__main__":
 
     print("Message [visualize_satellites]: {} sub-directories will be analyzed".format(len(subdirs)))
 
-    for fdir in tqdm(subdirs):
+    for fdir in subdirs:
         dt = os.path.basename(fdir)
         print("Currently analyzing:", dt) # date
         year, month, date, hour, minute, sec, extent = get_metadata(fdir)
@@ -842,7 +842,6 @@ if __name__ == "__main__":
                     print(j)
             else:
                 print('Message [visualize_satellites] No Level-2 products were processed on this run')
-
 
 
     END_TIME = datetime.datetime.now()
