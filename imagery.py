@@ -64,7 +64,7 @@ class Imagery:
 
         self.get_instrument()
         if self.buoys is not None:
-            self.buoy_dts, self.buoy_lons, self.buoy_lats = self.get_buoy_data()
+            self.buoy_dts, self.buoy_lons, self.buoy_lats = self.get_buoy_data(force_local=True)
 
         if self.norway_ship is not None:
             self.norway_lons, self.norway_lats = self.get_norway_icebreaker_data()
@@ -262,7 +262,7 @@ class Imagery:
         return slon, slat
 
 
-    def get_buoy_data(self, API_KEY="kU7vw3YBcIvnxqTH8DlDeR08QTTfNYiZ", days=7, download_threshold_hrs=6, force_download=False):
+    def get_buoy_data(self, API_KEY="kU7vw3YBcIvnxqTH8DlDeR08QTTfNYiZ", days=7, download_threshold_hrs=6, force_download=False, force_local=False):
         """
         Retrieves buoy data from a JSON file or downloads it from a server.
 
@@ -308,33 +308,42 @@ class Imagery:
 
             buoy_download_json = os.path.join(fdir, 'download_buoy{}.json'.format(bname))
 
-            # essentially force download; read old data only if it's actually available
-            check_dt = utc_now_dt - datetime.timedelta(hours=download_threshold_hrs+1)
-            key = 'last_downloaded_buoy{}'.format(bname.upper())
-            if os.path.isfile(buoy_download_json) and (meta is not None) and (len(meta) > 0) and (key in list(meta.keys())):
-                check_dt = datetime.datetime.strptime(meta[key], "%Y-%m-%d_%H:%M:%S")
-
-            # if less than time threshold, read old data; otherwise download from server and save to file
-            if ((utc_now_dt - check_dt) < datetime.timedelta(hours=download_threshold_hrs)) and (not force_download):
-                # print("Message [get_buoy_data]: Using existing data file for: Buoy {}".format(bname))
+            if force_local and os.path.exists(buoy_download_json):
+                print('Message [get_buoy_data]: Reading local files only for buoy: ', bname)
                 with open(buoy_download_json, 'r') as f:
                     data = json.load(f)
                     df   = pd.DataFrame(data)
+
             else:
-                # print("Message [get_buoy_data]: Downloading data for: Buoy {}".format(bname))
-                try:
-                    data = requests.get(url, headers={'Authorization':'Bearer {}'.format(API_KEY)}, timeout=(15, 10)).json()
-                    df   = pd.DataFrame(data)
-                    with open(buoy_download_json, 'w') as f: # save for next time
-                        json.dump(data, f)
 
-                    meta['last_downloaded_buoy{}'.format(bname.upper())] = utc_now_dt.strftime("%Y-%m-%d_%H:%M:%S")
+                # essentially force download; read old data only if it's actually available
+                check_dt = utc_now_dt - datetime.timedelta(hours=download_threshold_hrs+1)
+                key = 'last_downloaded_buoy{}'.format(bname.upper())
+                if os.path.isfile(buoy_download_json) and (meta is not None) and (len(meta) > 0) and (key in list(meta.keys())):
+                    check_dt = datetime.datetime.strptime(meta[key], "%Y-%m-%d_%H:%M:%S")
 
-                except Exception as api_err:
-                    print("Message [get_buoy_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                print(utc_now_dt, check_dt)
+                # if less than time threshold, read old data; otherwise download from server and save to file
+                if ((utc_now_dt - check_dt) < datetime.timedelta(hours=download_threshold_hrs)) and (not force_download):
+                    # print("Message [get_buoy_data]: Using existing data file for: Buoy {}".format(bname))
                     with open(buoy_download_json, 'r') as f:
                         data = json.load(f)
                         df   = pd.DataFrame(data)
+                else:
+                    # print("Message [get_buoy_data]: Downloading data for: Buoy {}".format(bname))
+                    try:
+                        data = requests.get(url, headers={'Authorization':'Bearer {}'.format(API_KEY)}, timeout=(15, 10)).json()
+                        df   = pd.DataFrame(data)
+                        with open(buoy_download_json, 'w') as f: # save for next time
+                            json.dump(data, f)
+
+                        meta['last_downloaded_buoy{}'.format(bname.upper())] = utc_now_dt.strftime("%Y-%m-%d_%H:%M:%S")
+
+                    except Exception as api_err:
+                        print("Message [get_buoy_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                        with open(buoy_download_json, 'r') as f:
+                            data = json.load(f)
+                            df   = pd.DataFrame(data)
 
             with open(buoy_metadata_json, 'w') as fm: # save metadata for next time
                 json.dump(meta, fm)
