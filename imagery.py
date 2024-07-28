@@ -63,6 +63,11 @@ class Imagery:
         self.verbose         = verbose
 
         self.get_instrument()
+        if self.buoys is not None:
+            self.buoy_dts, self.buoy_lons, self.buoy_lats = self.get_buoy_data()
+
+        if self.norway_ship is not None:
+            self.norway_lons, self.norway_lats = self.get_norway_icebreaker_data()
 
 
     def scale_table(self, arr):
@@ -318,7 +323,7 @@ class Imagery:
             else:
                 # print("Message [get_buoy_data]: Downloading data for: Buoy {}".format(bname))
                 try:
-                    data = requests.get(url, headers={'Authorization':'Bearer {}'.format(API_KEY)}, timeout=(20, 30)).json()
+                    data = requests.get(url, headers={'Authorization':'Bearer {}'.format(API_KEY)}, timeout=(15, 10)).json()
                     df   = pd.DataFrame(data)
                     with open(buoy_download_json, 'w') as f: # save for next time
                         json.dump(data, f)
@@ -453,31 +458,31 @@ class Imagery:
 
         # visualize buoys
         if self.buoys is not None:
-            dt, lons, lats = self.get_buoy_data()
+            # dt, lons, lats = self.get_buoy_data()
 
             # dt_text_box = ''
-            buoy_ids = list(dt.keys())
+            buoy_ids = list(self.buoy_dts.keys())
             colors = plt.cm.brg(np.linspace(0, 1, len(buoy_ids)))
             for i, bid in enumerate(buoy_ids):
-                ax.scatter(lons[bid][0], lats[bid][0], marker='s', s=30, edgecolor='black', facecolor=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=0.7)
-                ax.plot(lons[bid], lats[bid], linewidth=1.5, color=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=0.7)
-                ax.scatter(lons[bid][-1], lats[bid][-1], marker='*', s=100, edgecolor='black', facecolor=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=1)
+                ax.scatter(self.buoy_lons[bid][0], self.buoy_lats[bid][0], marker='s', s=30, edgecolor='black', facecolor=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=0.7)
+                ax.plot(self.buoy_lons[bid], self.buoy_lats[bid], linewidth=1.5, color=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=0.7)
+                ax.scatter(self.buoy_lons[bid][-1], self.buoy_lats[bid][-1], marker='*', s=100, edgecolor='black', facecolor=colors[i], transform=util.plot_util.proj_data, zorder=2, alpha=1)
 
                 text = str(bid)
                 x_offset, y_offset = 1.5, -0.2 # offset for text
                 if text == "J":
                     x_offset, y_offset = 1.5, -0.1 # buoy J is drifting east, others are drifting west for the most part
-                ax.text(lons[bid][-1] + x_offset, lats[bid][-1] + y_offset, text, ha="center", va="center", transform=util.plot_util.proj_data, color=colors[i], fontsize=10, fontweight="bold", zorder=2)
+                ax.text(self.buoy_lons[bid][-1] + x_offset, self.buoy_lats[bid][-1] + y_offset, text, ha="center", va="center", transform=util.plot_util.proj_data, color=colors[i], fontsize=10, fontweight="bold", zorder=2)
 
         # visualize Norwegian ice breaker
         if self.norway_ship is not None:
-            slon, slat = self.get_norway_icebreaker_data()
-            if (np.isnan(slon)) or (np.isnan(slat)):
+            # slon, slat = self.get_norway_icebreaker_data()
+            if (np.isnan(self.norway_lons)) or (np.isnan(self.norway_lats)):
                 print('Message [add_ancillary]: Norwegian Icebreaker will not be plotted.')
             # diamond marker
-            ax.scatter(slon, slat, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=60, zorder=2, alpha=1)
+            ax.scatter(self.norway_lons, self.norway_lats, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=60, zorder=2, alpha=1)
             x_offset, y_offset = 1.5, -0.1
-            ax.text(slon + x_offset, slat + y_offset, '3YYQ', color='magenta', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=10, fontweight="bold", zorder=2)
+            ax.text(self.norway_lons + x_offset, self.norway_lats + y_offset, '3YYQ', color='magenta', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=10, fontweight="bold", zorder=2)
 
 
 
