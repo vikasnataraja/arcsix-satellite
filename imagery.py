@@ -645,21 +645,25 @@ class Imagery:
             # slon, slat = self.get_norway_icebreaker_data()
             if (np.isnan(self.norway_lons)) or (np.isnan(self.norway_lats)):
                 print('Message [add_ancillary]: Norwegian Icebreaker will not be plotted.')
-            # diamond marker
-            ax.scatter(self.norway_lons, self.norway_lats, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=40, zorder=2, alpha=1)
-            x_offset, y_offset = 1.5, -0.1
-            ax.text(self.norway_lons + x_offset, self.norway_lats + y_offset, '3YYQ', color='magenta', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
+
+            else:
+                # diamond marker
+                ax.scatter(self.norway_lons, self.norway_lats, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=40, zorder=2, alpha=1)
+                x_offset, y_offset = 1.5, -0.1
+                ax.text(self.norway_lons + x_offset, self.norway_lats + y_offset, '3YYQ', color='magenta', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
 
         # visualize Odin icebreaker
         if self.odin_ship is not None:
             # slon, slat = self.get_odin_icebreaker_data()
-            print(self.odin_lons, self.odin_lats)
+
             if (np.isnan(self.odin_lons)) or (np.isnan(self.odin_lats)):
                 print('Message [add_ancillary]: Odin Icebreaker will not be plotted.')
-            # diamond marker
-            ax.scatter(self.odin_lons, self.odin_lats, transform=util.plot_util.proj_data, marker='D', facecolor='turquoise', edgecolor='black', s=40, zorder=2, alpha=1)
-            x_offset, y_offset = 1.5, -0.1
-            ax.text(self.odin_lons + x_offset, self.odin_lats + y_offset, 'Odin', color='turquoise', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
+
+            else:
+                # diamond marker
+                ax.scatter(self.odin_lons, self.odin_lats, transform=util.plot_util.proj_data, marker='D', facecolor='turquoise', edgecolor='black', s=40, zorder=2, alpha=1)
+                x_offset, y_offset = 1.5, -0.1
+                ax.text(self.odin_lons + x_offset, self.odin_lats + y_offset, 'Odin', color='turquoise', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
 
 
 
