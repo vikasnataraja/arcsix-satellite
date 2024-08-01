@@ -6,6 +6,7 @@ import datetime
 import matplotlib
 import cartopy
 import warnings
+import subprocess
 import numpy as np
 
 from matplotlib.gridspec import GridSpec
@@ -47,6 +48,7 @@ class Imagery:
                  geojson_fpath,
                  buoys,
                  norway_ship,
+                 odin_ship,
                  mode,
                  quicklook_fdir,
                  verbose=False):
@@ -58,16 +60,20 @@ class Imagery:
         self.geojson_fpath   = geojson_fpath
         self.buoys           = buoys
         self.norway_ship     = norway_ship
+        self.odin_ship       = odin_ship
         self.mode            = mode
         self.quicklook_fdir  = quicklook_fdir
         self.verbose         = verbose
 
         self.get_instrument()
         if self.buoys is not None:
-            self.buoy_dts, self.buoy_lons, self.buoy_lats = self.get_buoy_data(force_local=True)
+            self.buoy_dts, self.buoy_lons, self.buoy_lats = self.get_buoy_data()
 
         if self.norway_ship is not None:
             self.norway_lons, self.norway_lats = self.get_norway_icebreaker_data()
+
+        if self.odin_ship is not None:
+            self.odin_lons, self.odin_lats = self.get_odin_icebreaker_data()
 
 
     def scale_table(self, arr):
@@ -161,12 +167,11 @@ class Imagery:
             self.instrument = 'Unknown'
 
 
-    def get_norway_icebreaker_data(self, url='http://vessel.npolar.io:8443/?token=asdfghjkl&mmsi=257275000', update_threshold_hrs=1, force_download=False):
+    def get_norway_icebreaker_data(self, update_threshold_hrs=1, force_download=False):
         """
         Retrieves the Norway icebreaker data from a specified URL or a local JSON file.
 
         Args:
-            url (str, optional): The URL to retrieve the data from. Defaults to 'http://vessel.npolar.io:8443/?token=asdfghjkl&mmsi=257275000'.
             update_threshold_hrs (int, optional): The time threshold in hours for updating the data. If the difference between current time and last downloaded time exceeds this value, data will be update via the URL download. Defaults to 1 i.e., updates hourly.
             force_download (bool, optional): Whether to force download the data even if a local file exists. Defaults to False.
 
@@ -176,7 +181,7 @@ class Imagery:
         Live Map: http://www.padodd.com/arcticmap/
         """
 
-        # url = 'http://vessel.npolar.io:8443/?token=asdfghjkl&mmsi=257275000'
+        url = 'http://vessel.npolar.io:8443/?token=asdfghjkl&mmsi=257275000'
 
         utc_now_dt = datetime.datetime.now(datetime.timezone.utc)
         utc_now_dt = utc_now_dt.replace(tzinfo=None) # so that timedelta does not raise an error
@@ -255,9 +260,162 @@ class Imagery:
                     slon, slat = np.nan, np.nan
 
         # so that it does not go out of the map bounds and stretch the image
-        if (slon >= 49) or (slon <= -125) or (slat <= 76) or (slat >= 89.75):
-            slon = np.nan
-            slat = np.nan
+        if self.mode == 'lincoln':
+            if (slon <= -125) or (slon >= 49) or (slat <= 76) or (slat >= 89.75):
+                print("Message [get_norway_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                slon = np.nan
+                slat = np.nan
+
+        elif (self.mode == 'canada') or (self.mode == 'platypus') or (self.mode == 'ca_archipelago'):
+            if (slon <= -140) or (slon >= -50) or (slat <= 76) or (slat >= 82):
+                print("Message [get_norway_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                slon = np.nan
+                slat = np.nan
+
+        elif (self.mode == 'baffin') or (self.mode == 'baffin_bay'):
+            if (slon <= -80) or (slon >= -50) or (slat <= 67) or (slat >= 81):
+                print("Message [get_norway_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                slon = np.nan
+                slat = np.nan
+
+        else:
+            print("Message [get_norway_icebreaker_data]: Region not valid, will not be plotted.")
+            slon, slat = np.nan, np.nan
+
+        return slon, slat
+
+
+    def get_odin_icebreaker_data(self, update_threshold_hrs=1, force_download=False):
+        """
+        Retrieves the latest icebreaker data for Odin.
+
+        Args:
+            update_threshold_hrs (int, optional): The time threshold in hours. If the time since the last data retrieval is less than this threshold, the function will return the previously retrieved data. Otherwise, it will download new data from the server. Defaults to 1.
+            force_download (bool, optional): If set to True, the function will always download new data from the server, regardless of the time threshold. Defaults to False.
+
+        Returns:
+            float: The longitude of the icebreaker's location.
+            float: The latitude of the icebreaker's location.
+        """
+
+        utc_now_dt = datetime.datetime.now(datetime.timezone.utc)
+        utc_now_dt = utc_now_dt.replace(tzinfo=None) # so that timedelta does not raise an error
+        start_dt   = utc_now_dt - datetime.timedelta(days=2)
+
+        start_dt_str = start_dt.strftime("%Y-%m-%d")
+        end_dt_str = utc_now_dt.strftime("%Y-%m-%d")
+
+        url = 'https://sbd.arcticmarinesolutions.se/api/v1/buoy/statuses/300434066003000/{}/{}'.format(start_dt_str, end_dt_str)
+
+        command = ['curl', '--header', 'Content-Type: application/json;charset=UTF-8', '--header', 'Authorization: Basic c2JkOjhmNGNmODMzYWRiZWI5NmNkZTVhOGVhZTg0MTM4YzNhMTU0NTIyZWI=', '{}'.format(url)]
+
+
+        if force_download:
+            try:
+                # result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                result = subprocess.run(command, capture_output=True, check=True, text=True)
+                coords = json.loads(result.stdout)
+                data = coords[-1] # get only the latest coordinates
+                slon, slat = data['lon'], data['lat']
+
+                with open(self.odin_ship, 'w') as f: # save for next time
+                    json.dump(data, f)
+
+            except Exception as api_err:
+                print("Message [get_odin_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                try:
+                    with open(self.odin_ship, 'r') as f:
+                        data = json.load(f)
+                    slon, slat = data['lon'], data['lat']
+
+                except Exception as json_err:
+                    print("Message [get_odin_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                    slon, slat = np.nan, np.nan
+
+            return slon, slat
+
+
+        if os.path.isfile(self.odin_ship):
+            with open(self.odin_ship, 'r') as f:
+                data = json.load(f)
+
+            # if less than time threshold, read old data; otherwise download from server and save to file
+            try: # seems to be fluctuating between different time formats
+                last_checked_dt = datetime.datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
+
+            except Exception as time_err:
+                print('Message [get_odin_icebreaker_data]: Error with time: {}, trying with different format...'.format(time_err))
+                try:
+                    last_checked_dt = datetime.datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                except Exception as another_time_err:
+                    print('Message [get_odin_icebreaker_data]: Error with time again: {}, returning nan, nan'.format(another_time_err))
+                    return np.nan, np.nan
+
+            if ((utc_now_dt - last_checked_dt) < datetime.timedelta(hours=update_threshold_hrs)) and (not force_download):
+                slon, slat = data['lon'], data['lat']
+
+            else:
+                try:
+                    result = subprocess.run(command, capture_output=True, check=True, text=True)
+                    coords = json.loads(result.stdout)
+                    data = coords[-1] # get only the latest coordinates
+                    slon, slat = data['lon'], data['lat']
+                    with open(self.odin_ship, 'w') as f: # save for next time
+                        json.dump(data, f)
+
+                except Exception as api_err:
+                    print("Message [get_odin_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                    try:
+                        with open(self.odin_ship, 'r') as f:
+                            data = json.load(f)
+                        slon, slat = data['lon'], data['lat']
+
+                    except Exception as json_err:
+                        print("Message [get_odin_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                        slon, slat = np.nan, np.nan
+
+        else:
+            try:
+                result = subprocess.run(command, capture_output=True, check=True, text=True)
+                coords = json.loads(result.stdout)
+                data = coords[-1] # get only the latest coordinates
+                slon, slat = data['lon'], data['lat']
+                with open(self.odin_ship, 'w') as f: # save for next time
+                    json.dump(data, f)
+
+            except Exception as api_err:
+                print("Message [get_odin_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                try:
+                    with open(self.odin_ship, 'r') as f:
+                        data = json.load(f)
+                    slon, slat = data['lon'], data['lat']
+
+                except Exception as json_err:
+                    print("Message [get_odin_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                    slon, slat = np.nan, np.nan
+
+        # so that it does not go out of the map bounds and stretch the image
+        if self.mode == 'lincoln':
+            if (slon <= -125) or (slon >= 49) or (slat <= 76) or (slat >= 89.75):
+                print("Message [get_odin_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                slon = np.nan
+                slat = np.nan
+
+        elif (self.mode == 'canada') or (self.mode == 'platypus') or (self.mode == 'ca_archipelago'):
+            if (slon <= -140) or (slon >= -50) or (slat <= 76) or (slat >= 82):
+                print("Message [get_odin_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                slon = np.nan
+                slat = np.nan
+
+        elif (self.mode == 'baffin') or (self.mode == 'baffin_bay'):
+            if (slon <= -80) or (slon >= -50) or (slat <= 67) or (slat >= 81):
+                print("Message [get_odin_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                slon = np.nan
+                slat = np.nan
+
+        else:
+            print("Message [get_odin_icebreaker_data]: Region not valid, will not be plotted.")
+            slon, slat = np.nan, np.nan
 
         return slon, slat
 
@@ -322,7 +480,6 @@ class Imagery:
                 if os.path.isfile(buoy_download_json) and (meta is not None) and (len(meta) > 0) and (key in list(meta.keys())):
                     check_dt = datetime.datetime.strptime(meta[key], "%Y-%m-%d_%H:%M:%S")
 
-                print(utc_now_dt, check_dt)
                 # if less than time threshold, read old data; otherwise download from server and save to file
                 if ((utc_now_dt - check_dt) < datetime.timedelta(hours=download_threshold_hrs)) and (not force_download):
                     # print("Message [get_buoy_data]: Using existing data file for: Buoy {}".format(bname))
@@ -483,15 +640,26 @@ class Imagery:
                     x_offset, y_offset = 1.5, -0.1 # buoy J is drifting east, others are drifting west for the most part
                 ax.text(self.buoy_lons[bid][-1] + x_offset, self.buoy_lats[bid][-1] + y_offset, text, ha="center", va="center", transform=util.plot_util.proj_data, color=colors[i], fontsize=10, fontweight="bold", zorder=2)
 
-        # visualize Norwegian ice breaker
+        # visualize Norwegian icebreaker
         if self.norway_ship is not None:
             # slon, slat = self.get_norway_icebreaker_data()
             if (np.isnan(self.norway_lons)) or (np.isnan(self.norway_lats)):
                 print('Message [add_ancillary]: Norwegian Icebreaker will not be plotted.')
             # diamond marker
-            ax.scatter(self.norway_lons, self.norway_lats, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=60, zorder=2, alpha=1)
+            ax.scatter(self.norway_lons, self.norway_lats, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=40, zorder=2, alpha=1)
             x_offset, y_offset = 1.5, -0.1
-            ax.text(self.norway_lons + x_offset, self.norway_lats + y_offset, '3YYQ', color='magenta', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=10, fontweight="bold", zorder=2)
+            ax.text(self.norway_lons + x_offset, self.norway_lats + y_offset, '3YYQ', color='magenta', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
+
+        # visualize Odin icebreaker
+        if self.odin_ship is not None:
+            # slon, slat = self.get_odin_icebreaker_data()
+            print(self.odin_lons, self.odin_lats)
+            if (np.isnan(self.odin_lons)) or (np.isnan(self.odin_lats)):
+                print('Message [add_ancillary]: Odin Icebreaker will not be plotted.')
+            # diamond marker
+            ax.scatter(self.odin_lons, self.odin_lats, transform=util.plot_util.proj_data, marker='D', facecolor='turquoise', edgecolor='black', s=40, zorder=2, alpha=1)
+            x_offset, y_offset = 1.5, -0.1
+            ax.text(self.odin_lons + x_offset, self.odin_lats + y_offset, 'Odin', color='turquoise', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
 
 
 
