@@ -350,7 +350,7 @@ def get_modis_viirs_geo_cld_opt(fdir):
 
 
 
-def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, start_dt, end_dt, quicklook_fdir, mode):
+def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, start_dt, end_dt, quicklook_fdir, mode):
 
     f03, fcld_l2 = get_modis_viirs_geo_cld_opt(fdir)
     if (len(f03) == 0) or (len(fcld_l2) == 0):
@@ -458,6 +458,7 @@ def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, bu
                                 geojson_fpath=geojson_fpath,
                                 buoys=buoys,
                                 norway_ship=norway_ship,
+                                odin_ship=odin_ship,
                                 quicklook_fdir=quicklook_fdir,
                                 mode=mode) # initialize class object
 
@@ -559,7 +560,7 @@ def get_modis_viirs_ref_geo(fdir):
     return fref, f03
 
 
-def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, start_dt, end_dt, quicklook_fdir, mode):
+def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, start_dt, end_dt, quicklook_fdir, mode):
 
     fref, f03 = get_modis_viirs_ref_geo(fdir)
     if (len(fref) == 0) or (len(f03) == 0):
@@ -694,6 +695,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                                      geojson_fpath=geojson_fpath,
                                      buoys=buoys,
                                      norway_ship=norway_ship,
+                                     odin_ship=odin_ship,
                                      quicklook_fdir=quicklook_fdir,
                                      mode=mode) # initialize class object
 
@@ -778,6 +780,7 @@ if __name__ == "__main__":
                         'Example:  --geojson my/path/to/geofile.json\n \n')
     parser.add_argument('--buoys', type=str, metavar='', default=None, help='Path to the JSON file containing URLs to the buoys csv data')
     parser.add_argument('--norway_ship', type=str, metavar='', default=None, help='Path to the JSON file where icebreaker data is/will be stored')
+    parser.add_argument('--odin_ship', type=str, metavar='', default=None, help='Path to the JSON file where icebreaker data is/will be stored')
     parser.add_argument('--mode', type=str, metavar='', default='lincoln', help='One of "baffin", "lincoln", or "platypus" ')
     parser.add_argument("--quicklook_fdir", type=str, default=None, help="Path to directory where quicklook images will be saved")
     args = parser.parse_args()
@@ -825,7 +828,7 @@ if __name__ == "__main__":
         outdir = args.outdir
 
         if args.nrt:
-            ret_l1 = save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
+            ret_l1 = save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, odin_ship=args.odin_ship, mode=args.mode)
 
             if len(ret_l1) > 0:
                 print('Message [visualize_satellites] Level-1 products visualized for:')
@@ -834,7 +837,7 @@ if __name__ == "__main__":
             else:
                 print('Message [visualize_satellites] No Level-1 products were processed on this run')
 
-            ret_l2 = save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, mode=args.mode)
+            ret_l2 = save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=None, odin_ship=None, mode=args.mode)
 
             if len(ret_l2) > 0:
                 print('Message [visualize_satellites] Level-2 products visualized for:')
