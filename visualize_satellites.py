@@ -735,10 +735,22 @@ def get_metadata(fdir):
 
     extent_str = meta[1][9:-2]
     extent     = [float(idx) for idx in extent_str.split(', ')]
-    ymd = meta[0][6:-1]
-    dt = datetime.datetime.strptime(ymd, '%Y-%m-%d')
+    # ymd = meta[0][6:-1]
+    # dt = datetime.datetime.strptime(ymd, '%Y-%m-%d')
 
-    return dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, extent
+    if len(meta) == 4: # there needs to be 4 lines otherwise use current utc time
+        start_dt = meta[-2][12:-1]
+        end_dt   = meta[-1][12:-1]
+
+        start_dt = datetime.datetime.strptime(start_dt, '%Y-%m-%d-%H%M')
+        end_dt = datetime.datetime.strptime(end_dt, '%Y-%m-%d-%H%M')
+
+    else:
+        end_dt = datetime.datetime.now(datetime.timezone.utc)
+        end_dt = end_dt.replace(tzinfo=None) # so that timedelta does not raise an error
+        start_dt = end_dt - datetime.timedelta(hours=4)
+
+    return extent, start_dt, end_dt
 
 
 def get_start_end_dates_metadata(fdir):
@@ -802,8 +814,9 @@ if __name__ == "__main__":
 
     subdirs = sorted(subdirs)
 
-    start_dt_hhmm, end_dt_hhmm = get_start_end_dates_metadata(subdirs[-1])
+    _, start_dt_hhmm, end_dt_hhmm = get_metadata(subdirs[-1])
 
+    # TODO: Need a better system for this
     start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
     print("Message [visualize_satellites]: Start time and end times were too far apart or not far enough...limiting to {} hour gap.".format(args.max_hours))
 
@@ -823,7 +836,8 @@ if __name__ == "__main__":
     for fdir in subdirs:
         dt = os.path.basename(fdir)
         print("Currently analyzing:", dt) # date
-        year, month, date, hour, minute, sec, extent = get_metadata(fdir)
+        # year, month, date, hour, minute, sec, extent = get_metadata(fdir)
+        extent, _, _ = get_metadata(fdir)
 
         outdir = args.outdir
 
