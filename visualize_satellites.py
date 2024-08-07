@@ -760,11 +760,17 @@ def get_start_end_dates_metadata(fdir):
     with open(os.path.join(fdir, "metadata.txt"), "r") as f:
         meta = f.readlines()
 
-    start_dt = meta[-2][12:-1]
-    end_dt   = meta[-1][12:-1]
+    if len(meta) == 4: # there needs to be 4 lines otherwise use current utc time
+        start_dt = meta[-2][12:-1]
+        end_dt   = meta[-1][12:-1]
 
-    start_dt = datetime.datetime.strptime(start_dt, '%Y-%m-%d-%H%M')
-    end_dt = datetime.datetime.strptime(end_dt, '%Y-%m-%d-%H%M')
+        start_dt = datetime.datetime.strptime(start_dt, '%Y-%m-%d-%H%M')
+        end_dt = datetime.datetime.strptime(end_dt, '%Y-%m-%d-%H%M')
+
+    else:
+        end_dt = datetime.datetime.now(datetime.timezone.utc)
+        end_dt = end_dt.replace(tzinfo=None) # so that timedelta does not raise an error
+        start_dt = end_dt - datetime.timedelta(hours=4)
 
     return start_dt, end_dt
 
