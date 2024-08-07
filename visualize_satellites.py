@@ -355,7 +355,7 @@ def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, bu
     f03, fcld_l2 = get_modis_viirs_geo_cld_opt(fdir)
     if (len(f03) == 0) or (len(fcld_l2) == 0):
         print("\nMessage [modis_viirs_cld_geo]: Could not find any common ref + cld products for MODIS\n")
-        return 0
+        return []
 
     n_obs = len(f03)
 
@@ -565,7 +565,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
     fref, f03 = get_modis_viirs_ref_geo(fdir)
     if (len(fref) == 0) or (len(f03) == 0):
         print("Message [visualize_satellites]: Could not find any common products for both MODIS and VIIRS")
-        return 0
+        return []
 
     n_obs = len(f03)
 
