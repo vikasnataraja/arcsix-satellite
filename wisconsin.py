@@ -383,6 +383,15 @@ class WisconsinDownload:
 
     def read_file_json(self, json_output):
 
+        json_type = type(json_output)
+        if json_type != dict:
+            print("Error [read_file_json]: Output JSON file is not a dictionary")
+            return []
+        else: # it is a dict but does not have 'data'
+            if 'data' not in list(json_output.keys()):
+                print("Error [read_file_json]: Output JSON file does not have 'data' field.")
+                return []
+
         if self.verbose:
             print("Message [read_file_json]: Found {} granules between provided start ({}) and end times ({})".format(len(json_output['data']), self.start_time.strftime("%Y-%m-%d_%H:%MZ"), self.end_time.strftime("%Y-%m-%d_%H:%MZ")))
 
