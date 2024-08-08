@@ -84,193 +84,6 @@ def get_viirs_ref_geo(fdir):
 
 
 
-################################################################################################################
-
-# Deprecated; Will be removed in a future version
-"""
-def get_modis_geo_cld_opt(fdir):
-
-    # MODIS files
-    modis_fnames = get_all_modis_files(fdir)
-    if len(modis_fnames) == 0:
-        print("No MODIS files found in: ", fdir)
-        return [], []
-    else:
-        _, acq_dts_ft03 = get_product_info(modis_fnames, product_id="MOD03")
-        _, acq_dts_fa03 = get_product_info(modis_fnames, product_id="MYD03")
-        acq_dts_modis_f03 = acq_dts_ft03 + acq_dts_fa03
-        # modis_f03 = temp1 + temp2
-        _, acq_dts_modis_f06_l2 = get_product_info(modis_fnames, product_id="06_L2")
-
-    modis_acq_dts_common = list(set.intersection(*map(set,
-                                                  [acq_dts_modis_f03,
-                                                  acq_dts_modis_f06_l2
-                                                  ])))
-
-    if len(modis_acq_dts_common) == 0:
-        print("IndexError: Could not find any common date/times among products")
-        return [], []
-
-    fnames = modis_fnames
-    # acq_dts_common = modis_acq_dts_common + viirs_acq_dts_common
-    # print(len(fnames), len(acq_dts_common))
-    f03, fcld_l2 = [], []
-
-    for f in fnames:
-        filename = os.path.basename(f).upper()
-        acq_dt = filename.split(".")[1] + '.' + filename.split(".")[2]
-        pname  = filename.split(".")[0]
-
-        if acq_dt in modis_acq_dts_common:
-
-            if ("MOD03" in pname) or ("MYD03" in pname):
-                f03.append(os.path.join(fdir, f))
-
-            elif "06_L2" in pname:
-                fcld_l2.append(os.path.join(fdir, f))
-
-            else:
-                pass
-
-    f03  = sorted(f03, key=lambda x: x.split('.')[2])
-    fcld_l2 = sorted(fcld_l2, key=lambda x: x.split('.')[2])
-    return f03, fcld_l2
-
-
-def save_to_file_modis_only_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, start_dt, end_dt, quicklook_fdir, mode):
-
-    f03, fcld_l2 = get_modis_geo_cld_opt(fdir)
-    if (len(f03) == 0) or (len(fcld_l2) == 0):
-        print("\nMessage [modis_cld_geo]: Could not find any common ref + cld products for MODIS\n")
-        return 0
-
-    n_obs = len(f03)
-
-    print("Found {} overpasses".format(n_obs))
-    # ext_area = get_swath_area(lon_1d, lat_1d)
-
-    valid_count = 0 # just for reporting
-
-    start_dt_str = start_dt.strftime('%Y-%m-%d-%H%M')
-    end_dt_str   = end_dt.strftime('%Y-%m-%d-%H%M')
-    # outdir_dt =  start_dt_str + '_' + end_dt_str
-
-    # outdir = os.path.join(outdir, outdir_dt)
-    # if not os.path.exists(outdir):
-    #     os.makedirs(outdir)
-    l2_dirs = ['water_path', 'ice_path',  'optical_thickness', 'cloud_phase', 'cloud_top_height_temperature']
-    exist_acq_dts = []
-    sub_outdirs = [f for f in os.listdir(outdir) if os.path.isdir(os.path.join(outdir, f))]
-    for sub in sub_outdirs:
-        if sub in l2_dirs:
-            for f in os.listdir(os.path.join(outdir, sub)):
-                if f.endswith('.png'):
-                    exist_acq_dt = datetime.datetime.strptime(''.join(f.split('_')[:-1]), '%Y-%m-%d-%H%MZ')
-                    exist_acq_dts.append(exist_acq_dt.strftime("%Y%j.%H%M"))
-
-    # purposely change start date to account for latency but not affect filenames
-    start_dt = start_dt - datetime.timedelta(hours=2)
-    start_dt_str = start_dt.strftime('%Y-%m-%d-%H%M')
-    print("Message [modis_cld_geo]: Start datetime:{}, End datetime: {}".format(start_dt_str, end_dt_str))
-    print("Warning [modis_cld_geo]: Start datetime was changed to catch more data and account for latency")
-
-    for i in tqdm(range(n_obs)):
-        try:
-
-            # geometries/geolocation file
-            geo_file    = f03[i]
-
-            # check if the file has already been processed
-            bgeo_file = os.path.basename(geo_file)
-            yyyydoy_hhmm = bgeo_file.split('.')[1][1:] + '.' + bgeo_file.split('.')[2]
-
-            print("Message [modis_cld_geo]: Processing: ", bgeo_file)
-            if yyyydoy_hhmm in exist_acq_dts: # if already processed, then skip
-                print("Message [modis_cld_geo]: Skipping {} as it has likely already been processed previously".format(bgeo_file))
-                continue
-
-
-            if not within_range(geo_file, start_dt, end_dt):
-                print("Message [modis_cld_geo]: Skipping {} as it is outside the provided date range: {} to {}".format(geo_file, start_dt.strftime("%Y-%m-%d:%H%M"), end_dt.strftime("%Y-%m-%d:%H%M")))
-                continue
-
-            cld_file    = fcld_l2[i]
-            acq_dt = os.path.basename(geo_file).split('.')[1] + '.' + os.path.basename(geo_file).split('.')[2]
-
-            if os.path.basename(geo_file).upper().startswith('M'): # modis
-                f_geo = modis_03(fnames=[geo_file], extent=extent, keep_dims=True)
-
-        # except HDF4Error:
-        #     print("PyHDF error with {}...skipping...\n".format(geo_file))
-        #     continue
-        # except FileNotFoundError:
-        #     print("netcdf error with {}...skipping...\n".format(geo_file))
-        #     continue
-        except Exception as err:
-            print("Error [modis_cld_geo]: some error with {}...skipping...\nError {}\n".format(geo_file, err))
-            continue
-
-        lon2d_1km = f_geo.data['lon']['data'].T
-        lat2d_1km = f_geo.data['lat']['data'].T
-        if len(lon2d_1km) == 0 or len(lat2d_1km) == 0:
-            # print('Lat/lon not valid')
-            continue
-
-        try:
-            # cloud product
-            if os.path.basename(cld_file).upper().startswith(('MOD06_L2', 'MYD06_L2')): # modis
-                f_cld = modis_l2(fnames=[cld_file], f03=f_geo, extent=extent, keep_dims=True)
-
-            lon2d_5km = f_cld.data['lon_5km']['data'].T
-            lat2d_5km = f_cld.data['lat_5km']['data'].T
-
-            ctp      = f_cld.data['ctp']['data'].T
-            cot_2d   = f_cld.data['cot']['data'].T
-            cwp_2d   = f_cld.data['cwp']['data'].T
-            cot_1621 = f_cld.data['cot_1621']['data'].T
-            cwp_1621 = f_cld.data['cwp_1621']['data'].T
-            ctp_ir   = f_cld.data['ctp_ir']['data'].T
-            cth      = f_cld.data['cth']['data'].T
-            ctt      = f_cld.data['ctt']['data'].T
-
-            # satellite name
-            satellite, group_name = get_satellite_group_name(acq_dt, geo_file, encode=False)
-            # satellite = np.array(satellite.encode("utf-8"), dtype=utf8_type)
-            if 'uwssec' in geo_file.lower():
-                data_source = 'UWisc SSEC'
-            else:
-                data_source = 'NASA LANCE DAAC'
-
-            arcsix_l2 = Imagery(data_source=data_source,
-                                satellite=satellite,
-                                acq_dt=group_name,
-                                outdir=outdir,
-                                geojson_fpath=geojson_fpath,
-                                buoys=buoys,
-                                norway_ship=norway_ship,
-                                quicklook_fdir=quicklook_fdir,
-                                mode=mode) # initialize class object
-
-            _ = arcsix_l2.plot_liquid_water_paths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp=ctp, cwp=cwp_2d, cwp_1621=cwp_1621)
-            _ = arcsix_l2.plot_ice_water_paths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp=ctp, cwp=cwp_2d, cwp_1621=cwp_1621)
-            _ = arcsix_l2.plot_optical_depths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, cot=cot_2d, cot_1621=cot_1621)
-            _ = arcsix_l2.plot_cloud_phase(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp_swir=ctp, ctp_ir=ctp_ir)
-            _ = arcsix_l2.plot_cloud_top(lon_2d=lon2d_5km, lat_2d=lat2d_5km, cth=cth, ctt=ctt)
-
-            valid_count += 1
-
-        except Exception as err:
-            print(err)
-            continue
-
-    if valid_count > 0:
-        return 1
-    else:
-        return 0
-
-"""
-################################################################################################################
-
 def get_modis_viirs_geo_cld_opt(fdir):
 
     # MODIS files
@@ -560,7 +373,7 @@ def get_modis_viirs_ref_geo(fdir):
     return fref, f03
 
 
-def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, start_dt, end_dt, quicklook_fdir, mode):
+def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, start_dt, end_dt, quicklook_fdir, mode, max_hours):
 
     fref, f03 = get_modis_viirs_ref_geo(fdir)
     if (len(fref) == 0) or (len(f03) == 0):
@@ -607,10 +420,8 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             # # add an extra hour of latency if necessary as they can sometimes be slow
             if os.path.basename(geo_file).startswith('V'):
 
-                if (end_dt - start_dt) < datetime.timedelta(hours=2):
-                    viirs_start_dt = start_dt - datetime.timedelta(hours=1)
-                elif ((end_dt - start_dt) > datetime.timedelta(hours=3)):
-                    viirs_start_dt = end_dt - datetime.timedelta(hours=3)
+                if (end_dt - start_dt) != datetime.timedelta(hours=max_hours):
+                    viirs_start_dt = start_dt - datetime.timedelta(hours=max_hours)
                     # print("Message [visualize_satellites]: Start time and end times were too far apart...limiting to 3 hour gap.")
                 else:
                     viirs_start_dt = start_dt
