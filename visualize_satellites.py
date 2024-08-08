@@ -659,7 +659,7 @@ if __name__ == "__main__":
         outdir = args.outdir
 
         if args.nrt:
-            ret_l1 = save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, odin_ship=args.odin_ship, mode=args.mode)
+            ret_l1 = save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, odin_ship=args.odin_ship, mode=args.mode, max_hours=args.max_hours)
 
             if len(ret_l1) > 0:
                 print('Message [visualize_satellites] Level-1 products visualized for:')
