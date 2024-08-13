@@ -388,33 +388,33 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
     end_dt_str   = end_dt.strftime('%Y-%m-%d-%H%M')
     print("Message [modis_viirs_ref_geo]: Start datetime:{}, End datetime: {}".format(start_dt_str, end_dt_str))
 
-    img_dirs = ['true_color', 'false_color_721', 'false_color_367', 'false_color_ir', 'false_color_cirrus']
-    exist_acq_dts = []
-    sub_outdirs = [f for f in os.listdir(outdir) if os.path.isdir(os.path.join(outdir, f))]
+    # img_dirs = ['true_color', 'false_color_721', 'false_color_367', 'false_color_ir', 'false_color_cirrus']
+    # exist_fnames = []
+    # sub_outdirs = [f for f in os.listdir(outdir) if os.path.isdir(os.path.join(outdir, f))]
 
-    if len(sub_outdirs) > 0:
-        for sub in sub_outdirs:
-            if sub in img_dirs:
-                for f in os.listdir(os.path.join(outdir, sub)):
-                    if f.endswith('.png'):
-                        exist_acq_dt = datetime.datetime.strptime(''.join(f.split('_')[:-1]), '%Y-%m-%d-%H%MZ')
-                        exist_acq_dts.append(exist_acq_dt.strftime("%Y%j.%H%M"))
+    # if len(sub_outdirs) > 0:
+    #     for sub in sub_outdirs:
+    #         if sub in img_dirs:
+    #             for f in os.listdir(os.path.join(outdir, sub)):
+    #                 if f.endswith('.png'):
+    #                     exist_fnames.append(os.path.join(outdir, sub, f))
+    #                     # exist_acq_dt = datetime.datetime.strptime(''.join(f.split('_')[:-1]), '%Y-%m-%d-%H%MZ')
+    #                     # exist_acq_dts.append(exist_acq_dt.strftime("%Y%j.%H%M"))
 
     report = [] # for reporting
     for i in tqdm(range(n_obs)):
         try:
             # geometries/geolocation file
             geo_file    = f03[i]
+            acq_dt = os.path.basename(geo_file).split('.')[1] + '.' + os.path.basename(geo_file).split('.')[2]
 
-            # check if the file has already been processed
-            bgeo_file = os.path.basename(geo_file)
-            yyyydoy_hhmm = bgeo_file.split('.')[1][1:] + '.' + bgeo_file.split('.')[2]
+            # satellite name
+            satellite, group_name = get_satellite_group_name(acq_dt, geo_file, encode=False)
 
-            # print("Message [modis_viirs_ref_geo]: Processing: ", bgeo_file)
-            if yyyydoy_hhmm in exist_acq_dts: # if already processed, then skip
-                # print("Message [modis_viirs_ref_geo]: Skipping {} as it has likely already been processed previously".format(bgeo_file))
-                continue
-
+            if 'uwssec' in geo_file.lower():
+                data_source = 'UWisc SSEC'
+            else:
+                data_source = 'NASA LANCE DAAC'
 
             ########################################################################################################################
             # # add an extra hour of latency if necessary as they can sometimes be slow
@@ -438,7 +438,6 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             ########################################################################################################################
 
             ref_file    = fref[i]
-            acq_dt = os.path.basename(geo_file).split('.')[1] + '.' + os.path.basename(geo_file).split('.')[2]
 
             if os.path.basename(geo_file).upper().startswith('M'): # modis
                 f_geo = modis_03(fnames=[geo_file], extent=extent, keep_dims=True)
@@ -489,15 +488,6 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
             rad_1640  = f_vis.data['rad']['data'][4].T
             rad_2130  = f_vis.data['rad']['data'][5].T
             rad_11000 = f_vis.data['rad']['data'][7].T
-
-
-            # satellite name
-            satellite, group_name = get_satellite_group_name(acq_dt, geo_file, encode=False)
-            # satellite = np.array(satellite.encode("utf-8"), dtype=utf8_type)
-            if 'uwssec' in geo_file.lower():
-                data_source = 'UWisc SSEC'
-            else:
-                data_source = 'NASA LANCE DAAC'
 
             arcsix_imagery = Imagery(data_source=data_source,
                                      satellite=satellite,
