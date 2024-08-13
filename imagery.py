@@ -663,7 +663,7 @@ class Imagery:
                 # diamond marker
                 ax.scatter(self.odin_lons, self.odin_lats, transform=util.plot_util.proj_data, marker='D', facecolor='turquoise', edgecolor='black', s=40, zorder=2, alpha=1)
                 x_offset, y_offset = 1.0, -0.1
-                ax.text(self.odin_lons + x_offset, self.odin_lats + y_offset, 'Odin', color='turquoise', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
+                ax.text(self.odin_lons + x_offset, self.odin_lats + y_offset, 'Oden', color='turquoise', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
 
 
 
