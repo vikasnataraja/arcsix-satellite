@@ -188,7 +188,7 @@ class Imagery:
 
         if force_download:
             try:
-                data = requests.get(url, timeout=(20, 30)).json()
+                data = requests.get(url, timeout=(5, 10)).json()
                 slon, slat = data['geometry']['coordinates']
                 with open(self.norway_ship, 'w') as f: # save for next time
                     json.dump(data, f)
@@ -227,7 +227,7 @@ class Imagery:
 
             else:
                 try:
-                    data = requests.get(url, timeout=(20, 30)).json()
+                    data = requests.get(url, timeout=(5, 10)).json()
                     slon, slat = data['geometry']['coordinates']
                     with open(self.norway_ship, 'w') as f: # save for next time
                         json.dump(data, f)
@@ -244,7 +244,7 @@ class Imagery:
 
         else:
             try:
-                data = requests.get(url, timeout=(20, 30)).json()
+                data = requests.get(url, timeout=(5, 10)).json()
                 slon, slat = data['geometry']['coordinates']
                 with open(self.norway_ship, 'w') as f: # save for next time
                     json.dump(data, f)
@@ -489,7 +489,7 @@ class Imagery:
                 else:
                     # print("Message [get_buoy_data]: Downloading data for: Buoy {}".format(bname))
                     try:
-                        data = requests.get(url, headers={'Authorization':'Bearer {}'.format(API_KEY)}, timeout=(15, 10)).json()
+                        data = requests.get(url, headers={'Authorization':'Bearer {}'.format(API_KEY)}, timeout=(5, 10)).json()
                         df   = pd.DataFrame(data)
                         with open(buoy_download_json, 'w') as f: # save for next time
                             json.dump(data, f)
@@ -657,7 +657,7 @@ class Imagery:
             # slon, slat = self.get_odin_icebreaker_data()
 
             if (np.isnan(self.odin_lons)) or (np.isnan(self.odin_lats)):
-                print('Message [add_ancillary]: Odin Icebreaker will not be plotted.')
+                print('Message [add_ancillary]: Oden Icebreaker will not be plotted.')
 
             else:
                 # diamond marker
