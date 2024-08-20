@@ -194,14 +194,15 @@ class Imagery:
                     json.dump(data, f)
 
             except Exception as api_err:
-                print("Message [get_norway_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                if self.verbose:
+                    print("Message [get_norway_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
                 try:
                     with open(self.norway_ship, 'r') as f:
                         data = json.load(f)
                     slon, slat = data['geometry']['coordinates']
 
                 except Exception as json_err:
-                    print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                    print("Error [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
                     slon, slat = np.nan, np.nan
 
             return slon, slat
@@ -215,11 +216,12 @@ class Imagery:
             try: # seems to be fluctuating between different time formats
                 last_checked_dt = datetime.datetime.strptime(data['properties']['datetime_utc'], '%Y-%m-%dT%H:%M:%S.%fZ')
             except Exception as time_err:
-                print('Message [get_norway_icebreaker_data]: Error with time: {}, trying with different format...'.format(time_err))
+                if self.verbose:
+                    print('Message [get_norway_icebreaker_data]: Error with time: {}, trying with different format...'.format(time_err))
                 try:
                     last_checked_dt = datetime.datetime.strptime(data['properties']['datetime_utc'], '%Y-%m-%dT%H:%M:%SZ')
                 except Exception as another_time_err:
-                    print('Message [get_norway_icebreaker_data]: Error with time again: {}, returning nan, nan'.format(another_time_err))
+                    print('Error [get_norway_icebreaker_data]: Error with time again: {}, returning nan, nan'.format(another_time_err))
                     return np.nan, np.nan
 
             if ((utc_now_dt - last_checked_dt) < datetime.timedelta(hours=update_threshold_hrs)) and (not force_download):
@@ -232,14 +234,15 @@ class Imagery:
                     with open(self.norway_ship, 'w') as f: # save for next time
                         json.dump(data, f)
                 except Exception as api_err:
-                    print("Message [get_norway_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                    if self.verbose:
+                        print("Message [get_norway_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
                     try:
                         with open(self.norway_ship, 'r') as f:
                             data = json.load(f)
                         slon, slat = data['geometry']['coordinates']
 
                     except Exception as json_err:
-                        print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                        print("Error [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
                         slon, slat = np.nan, np.nan
 
         else:
@@ -249,37 +252,42 @@ class Imagery:
                 with open(self.norway_ship, 'w') as f: # save for next time
                     json.dump(data, f)
             except Exception as api_err:
-                print("Message [get_norway_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                if self.verbose:
+                    print("Message [get_norway_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
                 try:
                     with open(self.norway_ship, 'r') as f:
                         data = json.load(f)
                     slon, slat = data['geometry']['coordinates']
 
                 except Exception as json_err:
-                    print("Message [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                    print("Error [get_norway_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
                     slon, slat = np.nan, np.nan
 
         # so that it does not go out of the map bounds and stretch the image
         if self.mode == 'lincoln':
             if (slon <= -125) or (slon >= 49) or (slat <= 76) or (slat >= 89.75):
-                print("Message [get_norway_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                if self.verbose:
+                    print("Message [get_norway_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
                 slon = np.nan
                 slat = np.nan
 
         elif (self.mode == 'canada') or (self.mode == 'platypus') or (self.mode == 'ca_archipelago'):
             if (slon <= -140) or (slon >= -50) or (slat <= 76) or (slat >= 82):
-                print("Message [get_norway_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                if self.verbose:
+                    print("Message [get_norway_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
                 slon = np.nan
                 slat = np.nan
 
         elif (self.mode == 'baffin') or (self.mode == 'baffin_bay'):
             if (slon <= -80) or (slon >= -50) or (slat <= 67) or (slat >= 81):
-                print("Message [get_norway_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                if self.verbose:
+                    print("Message [get_norway_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
                 slon = np.nan
                 slat = np.nan
 
         else:
-            print("Message [get_norway_icebreaker_data]: Region not valid, will not be plotted.")
+            if self.verbose:
+                print("Message [get_norway_icebreaker_data]: Region not valid, will not be plotted.")
             slon, slat = np.nan, np.nan
 
         return slon, slat
@@ -322,14 +330,15 @@ class Imagery:
                     json.dump(data, f)
 
             except Exception as api_err:
-                print("Message [get_odin_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                if self.verbose:
+                    print("Message [get_odin_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
                 try:
                     with open(self.odin_ship, 'r') as f:
                         data = json.load(f)
                     slon, slat = data['lon'], data['lat']
 
                 except Exception as json_err:
-                    print("Message [get_odin_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                    print("Error [get_odin_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
                     slon, slat = np.nan, np.nan
 
             return slon, slat
@@ -344,11 +353,12 @@ class Imagery:
                 last_checked_dt = datetime.datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
 
             except Exception as time_err:
-                print('Message [get_odin_icebreaker_data]: Error with time: {}, trying with different format...'.format(time_err))
+                if self.verbose:
+                    print('Message [get_odin_icebreaker_data]: Error with time: {}, trying with different format...'.format(time_err))
                 try:
                     last_checked_dt = datetime.datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
                 except Exception as another_time_err:
-                    print('Message [get_odin_icebreaker_data]: Error with time again: {}, returning nan, nan'.format(another_time_err))
+                    print('Error [get_odin_icebreaker_data]: Error with time again: {}, returning nan, nan'.format(another_time_err))
                     return np.nan, np.nan
 
             if ((utc_now_dt - last_checked_dt) < datetime.timedelta(hours=update_threshold_hrs)) and (not force_download):
@@ -364,14 +374,15 @@ class Imagery:
                         json.dump(data, f)
 
                 except Exception as api_err:
-                    print("Message [get_odin_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                    if self.verbose:
+                        print("Message [get_odin_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
                     try:
                         with open(self.odin_ship, 'r') as f:
                             data = json.load(f)
                         slon, slat = data['lon'], data['lat']
 
                     except Exception as json_err:
-                        print("Message [get_odin_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                        print("Error [get_odin_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
                         slon, slat = np.nan, np.nan
 
         else:
@@ -384,37 +395,42 @@ class Imagery:
                     json.dump(data, f)
 
             except Exception as api_err:
-                print("Message [get_odin_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
+                if self.verbose:
+                    print("Message [get_odin_icebreaker_data] Following error occurred when downloading data: {}\n Will attempt to read from local file instead...".format(api_err))
                 try:
                     with open(self.odin_ship, 'r') as f:
                         data = json.load(f)
                     slon, slat = data['lon'], data['lat']
 
                 except Exception as json_err:
-                    print("Message [get_odin_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
+                    print("Error [get_odin_icebreaker_data] Following error occurred when reading from local file: {}\n Defaulting to (nan, nan)..".format(json_err))
                     slon, slat = np.nan, np.nan
 
         # so that it does not go out of the map bounds and stretch the image
         if self.mode == 'lincoln':
             if (slon <= -125) or (slon >= 49) or (slat <= 76) or (slat >= 89.75):
-                print("Message [get_odin_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                if self.verbose:
+                    print("Message [get_odin_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
                 slon = np.nan
                 slat = np.nan
 
         elif (self.mode == 'canada') or (self.mode == 'platypus') or (self.mode == 'ca_archipelago'):
             if (slon <= -140) or (slon >= -50) or (slat <= 76) or (slat >= 82):
-                print("Message [get_odin_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                if self.verbose:
+                    print("Message [get_odin_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
                 slon = np.nan
                 slat = np.nan
 
         elif (self.mode == 'baffin') or (self.mode == 'baffin_bay'):
             if (slon <= -80) or (slon >= -50) or (slat <= 67) or (slat >= 81):
-                print("Message [get_odin_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
+                if self.verbose:
+                    print("Message [get_odin_icebreaker_data]: Coordinates out of bounds, will not be plotted.")
                 slon = np.nan
                 slat = np.nan
 
         else:
-            print("Message [get_odin_icebreaker_data]: Region not valid, will not be plotted.")
+            if self.verbose:
+                print("Message [get_odin_icebreaker_data]: Region not valid, will not be plotted.")
             slon, slat = np.nan, np.nan
 
         return slon, slat
@@ -467,7 +483,8 @@ class Imagery:
             buoy_download_json = os.path.join(fdir, 'download_buoy{}.json'.format(bname))
 
             if force_local and os.path.exists(buoy_download_json):
-                print('Message [get_buoy_data]: Reading local files only for buoy: ', bname)
+                if self.verbose:
+                    print('Message [get_buoy_data]: Reading local files only for buoy: ', bname)
                 with open(buoy_download_json, 'r') as f:
                     data = json.load(f)
                     df   = pd.DataFrame(data)
@@ -644,7 +661,8 @@ class Imagery:
         if self.norway_ship is not None:
             # slon, slat = self.get_norway_icebreaker_data()
             if (np.isnan(self.norway_lons)) or (np.isnan(self.norway_lats)):
-                print('Message [add_ancillary]: Norwegian Icebreaker will not be plotted.')
+                if self.verbose:
+                    print('Message [add_ancillary]: Norwegian Icebreaker will not be plotted.')
 
             else:
                 # diamond marker
@@ -657,7 +675,8 @@ class Imagery:
             # slon, slat = self.get_odin_icebreaker_data()
 
             if (np.isnan(self.odin_lons)) or (np.isnan(self.odin_lats)):
-                print('Message [add_ancillary]: Oden Icebreaker will not be plotted.')
+                if self.verbose:
+                    print('Message [add_ancillary]: Oden Icebreaker will not be plotted.')
 
             else:
                 # diamond marker
@@ -738,7 +757,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [false_color_721]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [false_color_721]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         red    = self.preprocess_band(red,   sza=sza)
@@ -803,7 +823,7 @@ class Imagery:
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
             except Exception as ql_err:
-                print('Message [false_color_721]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+                print('Error [false_color_721]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
 
         return 1
 
@@ -825,7 +845,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [false_color_367]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [false_color_367]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         red    = self.preprocess_band(red,   sza=sza)
@@ -890,7 +911,7 @@ class Imagery:
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
             except Exception as ql_err:
-                print('Message [false_color_367]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+                print('Error [false_color_367]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
 
         return 1
 
@@ -912,7 +933,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [true_color]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [true_color]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         red    = self.preprocess_band(red,   sza=sza, scale=True)
@@ -978,7 +1000,7 @@ class Imagery:
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
             except Exception as ql_err:
-                print('Message [true_color]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+                print('Error [true_color]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
 
         return 1
 
@@ -1000,7 +1022,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [false_color_cirrus]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [false_color_cirrus]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         red    = self.preprocess_band(red,   sza=sza)
@@ -1066,7 +1089,7 @@ class Imagery:
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
             except Exception as ql_err:
-                print('Message [false_color_cirrus]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+                print('Error [false_color_cirrus]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
 
         return 1
 
@@ -1088,7 +1111,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [false_color_ir]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [false_color_ir]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         # radiance so no cosine sza correction needed
@@ -1155,7 +1179,7 @@ class Imagery:
                 fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
                 plt.close()
             except Exception as ql_err:
-                print('Message [false_color_ir]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
+                print('Error [false_color_ir]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
 
         return 1
 
@@ -1184,7 +1208,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [liquid_water_path]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [liquid_water_path]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         # pha            = ctp[acq_dt]
@@ -1303,7 +1328,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [ice_water_path]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [ice_water_path]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         # pha            = ctp[acq_dt]
@@ -1420,7 +1446,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname   = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [optical_depths]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [optical_depths]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         im_cot      = cot
@@ -1528,7 +1555,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [cloud_phase]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [cloud_phase]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         im_ctp_swir = ctp_swir
@@ -1615,7 +1643,8 @@ class Imagery:
         sat_fname    = self.satellite.split('/')[0]
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
-            print("Message [cloud_top]: {} skipped since it already exists.".format(full_fname))
+            if self.verbose:
+                print("Message [cloud_top]: {} skipped since it already exists.".format(full_fname))
             return 0
 
         im_cth = cth
