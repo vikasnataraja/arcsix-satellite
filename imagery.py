@@ -590,57 +590,87 @@ class Imagery:
         return metadata
 
 
-    def add_ancillary(self, ax, title=None, scale=1):
+    def add_ancillary(self, ax, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, coastline=True, ocean=True, gridlines=True, land=True, x_fontcolor='black', y_fontcolor='black', y_inline=True, x_inline=False, zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None):
         """
-        Adds ancillary features to the plot.
+        Add cartopy features and styling elements (title, ocean/land color, coastlines, gridlines) to a cartopy map plot.
 
         Args:
-            ax (matplotlib.axes.Axes): The axes object to add the features to.
+        ----
+            ax: A matplotlib or cartopy axes object where the features will be drawn.
             title (str, optional): The title of the plot. Defaults to None.
-            scale (float, optional): The scale factor for the font sizes. Defaults to 1.
+            scale (float, optional): A scaling factor for text size. Defaults to 1.
+            dx (int, optional): Longitude spacing in degrees. Defaults to 20.
+            dy (int, optional): Latitude spacing in degrees. Defaults to 5.
+            cartopy_black (bool, optional): Whether to use a black color scheme for background
+                and cartographic features. Defaults to False.
+            ccrs_data (cartopy.crs, optional): Coordinate reference system to use
+                for the plot. Defaults to ccrs.PlateCarree().
+            coastline (bool, optional): Whether to draw coastlines. Defaults to True.
+            ocean (bool, optional): Whether to fill ocean areas. Defaults to True.
+            gridlines (bool, optional): Whether to draw gridlines. Defaults to True.
+            land (bool, optional): Whether to fill land areas. Defaults to True.
+            x_fontcolor (str, optional): Font color for x-axis gridline labels. Defaults to 'black'.
+            y_fontcolor (str, optional): Font color for y-axis gridline labels. Defaults to 'black'.
+            y_inline (bool, optional): Flag to decide whether latitude labels are drawn inline or not. Defaults to True.
+            zorders (dict, optional): Z-order values for different features (land, ocean, coastline,
+                gridlines). Defaults to {'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}.
+            colors (dict, optional): Color mappings for features like ocean, land, coastline,
+                title, and background. If None, defaults are used.
+
+        Returns:
+        -------
+            None, modifies axis in-place
         """
-        # ax.scatter(cfs_alert[0], cfs_alert[1], marker='*', s=30, color='white', transform=proj_data, zorder=2)
-        # ax.text(cfs_alert[0]-0.5, cfs_alert[1]-0.5, "Stn. Alert", ha="center", color='white', transform=proj_data,
-        #         fontsize=14, fontweight="bold", zorder=2)
-        # ax.scatter(stn_nord[0], stn_nord[1], marker='*', s=30, color='white', transform=proj_data, zorder=2)
-        # ax.text(stn_nord[0]-0.5, stn_nord[1]-0.5, "Stn. Nord\n(Villum)", ha="center", color='white', transform=proj_data,
-        #         fontsize=14,fontweight="bold", zorder=2)
-        # ax.scatter(thule_pituffik[0], thule_pituffik[1], marker='*', s=30, color='white', transform=proj_data, zorder=2)
-        # ax.text(thule_pituffik[0]-0.5, thule_pituffik[1]-0.5, "Thule\n(Pituffik)", ha="center", color='white', transform=proj_data,
-        #         fontsize=14, fontweight="bold", zorder=2)
 
+        if ccrs_data is None:
+            ccrs_data = ccrs.PlateCarree()
 
-        # set title manually because of boundary
+        # set title
         if title is not None:
-            # ax.text(0.5, 0.95, title, ha="center", color='white', fontsize=20, fontweight="bold", transform=ax.transAxes,
-            #         bbox=dict(facecolor='black', boxstyle='round', pad=1))
-            title_fontsize = int(22 * scale)
+            title_fontsize = int(18 * scale)
+            ax.set_title(title, pad=7.5, fontsize=title_fontsize, fontweight="bold")
 
-            ax.set_title(title, pad=10, fontsize=title_fontsize, fontweight="bold")
+        if colors is None:
+            if cartopy_black:
+                colors = {'ocean':'black', 'land':'black', 'coastline':'black', 'title':'white', 'background':'black'}
 
-        ax.add_feature(cartopy.feature.OCEAN.with_scale('50m'), zorder=0, facecolor='black', edgecolor='none')
-        ax.add_feature(cartopy.feature.LAND.with_scale('50m'), zorder=0, facecolor='black', edgecolor='none')
-        ax.add_feature(cartopy.feature.COASTLINE.with_scale('50m'), zorder=2, edgecolor='darkgray', linewidth=1, alpha=1)
+            else:
+                colors = {'ocean':'aliceblue', 'land':'#fcf4e8', 'coastline':'black', 'title':'black', 'background':'white'}
 
-        # ax.set_aspect("auto")
+        if ocean:
+            ax.add_feature(cartopy.feature.OCEAN.with_scale('10m'), zorder=zorders['ocean'], facecolor=colors['ocean'], edgecolor='none')
 
-        gl = ax.gridlines(linewidth=1.5, color='darkgray',
-                    draw_labels=True, zorder=2, alpha=1, linestyle=(0, (1, 1)),
-                    x_inline=False, y_inline=True, crs=util.plot_util.proj_data)
+        if land:
+            ax.add_feature(cartopy.feature.LAND.with_scale('10m'), zorder=zorders['land'], facecolor=colors['land'], edgecolor='none')
 
-        gl.xformatter = LongitudeFormatter()
-        gl.yformatter = LatitudeFormatter()
-        gl.xlocator = mticker.FixedLocator(np.arange(-180, 180, 20))
-        gl.ylocator = mticker.FixedLocator(np.arange(0, 90, 5))
-        gl.xlabel_style = {'size': int(12 * scale), 'color': 'black'}
-        gl.ylabel_style = {'size': int(12 * scale), 'color': 'white'}
-        gl.rotate_labels = False
-        gl.top_labels    = False
-        gl.xpadding = 5
-        gl.ypadding = 5
+        if coastline:
+            ax.add_feature(cartopy.feature.COASTLINE.with_scale('10m'), zorder=zorders['coastline'], edgecolor=colors['coastline'], linewidth=1, alpha=1)
+
+        if gridlines:
+            gl = ax.gridlines(linewidth=1.5, color='darkgray',
+                        draw_labels=True, zorder=zorders['gridlines'], alpha=0.75, linestyle=(0, (1, 1)),
+                        x_inline=x_inline, y_inline=y_inline, crs=ccrs_data)
+
+            gl.xformatter = LongitudeFormatter()
+            gl.yformatter = LatitudeFormatter()
+            gl.xlocator = mticker.FixedLocator(np.arange(-180, 180, dx))
+            gl.ylocator = mticker.FixedLocator(np.arange(0, 90, dy))
+            gl.xlabel_style = {'size': int(12 * scale), 'color': x_fontcolor}
+            gl.ylabel_style = {'size': int(12 * scale), 'color': y_fontcolor}
+            gl.rotate_labels = False
+            gl.top_labels    = False
+            gl.right_labels  = False
+            gl.xpadding = 7.5
+            gl.ypadding = 7.5
+
         for spine in ax.spines.values():
-            spine.set_edgecolor('black')
+            if cartopy_black:
+                spine.set_edgecolor('white')
+            else:
+                spine.set_edgecolor('black')
+
             spine.set_linewidth(1)
+
 
         # visualize buoys
         if self.buoys is not None:
@@ -660,32 +690,7 @@ class Imagery:
                     x_offset, y_offset = 1.5, -0.1 # buoy J is drifting east, others are drifting west for the most part
                 ax.text(self.buoy_lons[bid][-1] + x_offset, self.buoy_lats[bid][-1] + y_offset, text, ha="center", va="center", transform=util.plot_util.proj_data, color=colors[i], fontsize=10, fontweight="bold", zorder=2)
 
-        # visualize Norwegian icebreaker
-        if self.norway_ship is not None:
-            # slon, slat = self.get_norway_icebreaker_data()
-            if (np.isnan(self.norway_lons)) or (np.isnan(self.norway_lats)):
-                if self.verbose:
-                    print('Message [add_ancillary]: Norwegian Icebreaker will not be plotted.')
 
-            else:
-                # diamond marker
-                ax.scatter(self.norway_lons, self.norway_lats, transform=util.plot_util.proj_data, marker='D', facecolor='magenta', edgecolor='black', s=40, zorder=2, alpha=1)
-                x_offset, y_offset = 1.5, -0.1
-                ax.text(self.norway_lons + x_offset, self.norway_lats + y_offset, '3YYQ', color='magenta', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
-
-        # visualize Odin icebreaker
-        if self.odin_ship is not None:
-            # slon, slat = self.get_odin_icebreaker_data()
-
-            if (np.isnan(self.odin_lons)) or (np.isnan(self.odin_lats)):
-                if self.verbose:
-                    print('Message [add_ancillary]: Oden Icebreaker will not be plotted.')
-
-            else:
-                # diamond marker
-                ax.scatter(self.odin_lons, self.odin_lats, transform=util.plot_util.proj_data, marker='D', facecolor='turquoise', edgecolor='black', s=40, zorder=2, alpha=1)
-                x_offset, y_offset = 1.0, -0.1
-                ax.text(self.odin_lons + x_offset, self.odin_lats + y_offset, 'Oden', color='turquoise', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
 
     def add_esri_features(ax, land_proj_filepath, ocean_proj_filepath, land_shapefile_path, ocean_shapefile_path, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, ocean=True, gridlines=True, coastline=True, land=True, x_fontcolor='black', y_fontcolor='black', zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None, y_inline=True):
         """
