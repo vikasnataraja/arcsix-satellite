@@ -87,9 +87,9 @@ ccrs_views =        {'lincoln': {'view_extent': [-130, 50, 76, 89],
                     'villum': {'view_extent': [-40, 0, 80, 90],
                                             'vlon': -40,
                                             'vlat': 80},
-                    'villum_to_north_pole': {'view_extent': [-50, 60, 80, 90],
-                                            'vlon': -40,
-                                            'vlat': 90},
+                    'villum_to_north_pole': {'view_extent': [-40, 5, 80, 90],
+                                            'vlon': -30,
+                                            'vlat': 82},
                 }
 
 # quicklook settings
