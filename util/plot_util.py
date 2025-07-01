@@ -18,7 +18,7 @@ else:
     mpl_style = 'ggplot'
 
 # Set font family globally
-plt.rc('font',**{'family':'serif','serif':['EB Garamond']})
+plt.rc('font',**{'family':'serif','serif':['Helvetica Neue']})
 
 ############################## Cloud phase IR colormap ##############################
 ctp_ir_cmap_arr = np.array([
