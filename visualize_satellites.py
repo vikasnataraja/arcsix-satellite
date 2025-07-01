@@ -502,6 +502,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
 
             _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d)
 
+            """
             _ = arcsix_imagery.create_false_color_721_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_2130, green=ref_860, blue=ref_650, sza=sza_2d)
 
             if satellite != 'Aqua': # band 6 at 1640 is broken for Aqua
@@ -513,7 +514,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
 
                 # 11micron-1.6-2.1 radiance
                 _ = arcsix_imagery.create_false_color_ir_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=rad_11000, green=rad_1640, blue=rad_2130)
-
+            """
             output_str = 'Processed {} acquired by {} from {}'.format(acq_dt, satellite, data_source)
             report.append(output_str)
             # print("Message [modis_viirs_ref_geo]: Successfully processed: ", acq_dt)
@@ -536,9 +537,12 @@ def get_metadata(fdir):
 
     extent_str = meta[1][9:-2]
     extent     = [float(idx) for idx in extent_str.split(', ')]
-    # ymd = meta[0][6:-1]
-    # dt = datetime.datetime.strptime(ymd, '%Y-%m-%d')
+    ymd_str = meta[0][6:-1]
+    start_dt = datetime.datetime.strptime(ymd_str, '%Y-%m-%d')
+    end_dt   = start_dt + datetime.timedelta(hours=23, minutes=59)
 
+    # dt = datetime.datetime.strptime(ymd, '%Y-%m-%d')
+    """
     if len(meta) == 4: # there needs to be 4 lines otherwise use current utc time
         start_dt = meta[-2][12:-1]
         end_dt   = meta[-1][12:-1]
@@ -550,7 +554,7 @@ def get_metadata(fdir):
         end_dt = datetime.datetime.now(datetime.timezone.utc)
         end_dt = end_dt.replace(tzinfo=None) # so that timedelta does not raise an error
         start_dt = end_dt - datetime.timedelta(hours=4)
-
+    """
     return extent, start_dt, end_dt
 
 
@@ -621,10 +625,11 @@ if __name__ == "__main__":
 
     subdirs = sorted(subdirs)
 
+    """
     _, start_dt_hhmm, end_dt_hhmm = get_metadata(subdirs[-1])
 
     # TODO: Need a better system for this
-    start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
+    # start_dt_hhmm = end_dt_hhmm - datetime.timedelta(hours=args.max_hours)
     print("Message [visualize_satellites]: Start time and end times were too far apart or not far enough...limiting to {} hour gap.".format(args.max_hours))
 
 
@@ -639,16 +644,19 @@ if __name__ == "__main__":
         subdirs = subdirs[-args.ndir_recent:]
 
     print("Message [visualize_satellites]: {} sub-directories will be analyzed".format(len(subdirs)))
-
+    """
     for fdir in subdirs:
         dt = os.path.basename(fdir)
         print("Currently analyzing:", dt) # date
         # year, month, date, hour, minute, sec, extent = get_metadata(fdir)
-        extent, _, _ = get_metadata(fdir)
+        extent, start_dt_hhmm, end_dt_hhmm = get_metadata(fdir)
+        start_dt_hhmm_str = start_dt_hhmm.strftime('%Y-%m-%d-%H%M')
+        end_dt_hhmm_str   = end_dt_hhmm.strftime('%Y-%m-%d-%H%M')
 
         outdir = args.outdir
 
         if args.nrt:
+
             ret_l1 = save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, odin_ship=args.odin_ship, mode=args.mode, max_hours=args.max_hours)
 
             if len(ret_l1) > 0:
@@ -657,7 +665,7 @@ if __name__ == "__main__":
                     print(i)
             else:
                 print('Message [visualize_satellites] No Level-1 products were processed on this run')
-
+            """
             ret_l2 = save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=None, odin_ship=None, mode=args.mode)
 
             if len(ret_l2) > 0:
@@ -666,7 +674,7 @@ if __name__ == "__main__":
                     print(j)
             else:
                 print('Message [visualize_satellites] No Level-2 products were processed on this run')
-
+            """
 
     END_TIME = datetime.datetime.now()
     print('Time taken to execute {}: {}'.format(os.path.basename(__file__), END_TIME - START_TIME))
