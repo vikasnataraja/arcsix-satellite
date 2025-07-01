@@ -84,6 +84,9 @@ ccrs_views =        {'lincoln': {'view_extent': [-130, 50, 76, 89],
                     'baffin':    {'view_extent': [-100, -40, 67, 84],
                                 'vlon':         -60,
                                 'vlat':          84},
+                    'ne_greenland_villum': {'view_extent': [-40, 0, 80, 90],
+                                            'vlon': -20,
+                                            'vlat': 85},
                 }
 
 # quicklook settings
