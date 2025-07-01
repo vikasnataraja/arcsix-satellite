@@ -16,6 +16,9 @@ import matplotlib.ticker as mticker
 import cartopy.crs as ccrs
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 
+from cartopy.io.shapereader import Reader
+from cartopy.feature import ShapelyFeature
+
 import util.plot_util
 # import util.constants
 
@@ -684,6 +687,116 @@ class Imagery:
                 x_offset, y_offset = 1.0, -0.1
                 ax.text(self.odin_lons + x_offset, self.odin_lats + y_offset, 'Oden', color='turquoise', ha="center", va="center", transform=util.plot_util.proj_data, fontsize=8, fontweight="bold", zorder=2)
 
+    def add_esri_features(ax, land_proj_filepath, ocean_proj_filepath, land_shapefile_path, ocean_shapefile_path, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, ocean=True, gridlines=True, coastline=True, land=True, x_fontcolor='black', y_fontcolor='black', zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None, y_inline=True):
+        """
+        Add ESRI features and styling elements (title, ocean/land color, coastlines, gridlines) to a cartopy map plot.
+
+        Args:
+        ----
+            ax: A matplotlib or cartopy axes object where the features will be drawn.
+            title (str, optional): The title of the plot. Defaults to None.
+            scale (float, optional): A scaling factor for text size. Defaults to 1.
+            dx (int, optional): Longitude spacing in degrees. Defaults to 20.
+            dy (int, optional): Latitude spacing in degrees. Defaults to 5.
+            cartopy_black (bool, optional): Whether to use a black color scheme for background
+                and cartographic features. Defaults to False.
+            ccrs_data (cartopy.crs, optional): Coordinate reference system to use
+                for the plot. Defaults to ccrs.PlateCarree().
+            coastline (bool, optional): Whether to draw coastlines. Defaults to True.
+            ocean (bool, optional): Whether to fill ocean areas. Defaults to True.
+            gridlines (bool, optional): Whether to draw gridlines. Defaults to True.
+            land (bool, optional): Whether to fill land areas. Defaults to True.
+            x_fontcolor (str, optional): Font color for x-axis gridline labels. Defaults to 'black'.
+            y_fontcolor (str, optional): Font color for y-axis gridline labels. Defaults to 'black'.
+            zorders (dict, optional): Z-order values for different features (land, ocean, coastline,
+                gridlines). Defaults to {'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}.
+            colors (dict, optional): Color mappings for features like ocean, land, coastline,
+                title, and background. If None, defaults are used.
+
+        Returns:
+        -------
+            None, modifies axis in-place
+        """
+
+        if ccrs_data is None:
+            ccrs_data = ccrs.PlateCarree()
+
+        # set title
+        if title is not None:
+            title_fontsize = int(18 * scale)
+            ax.set_title(title, pad=7.5, fontsize=title_fontsize, fontweight="bold")
+
+        if colors is None:
+            if cartopy_black:
+                colors = {'ocean':'black', 'land':'black', 'coastline':'black', 'title':'white', 'background':'black'}
+
+            else:
+                colors = {'ocean':'aliceblue', 'land':'#fcf4e8', 'coastline':'black', 'title':'black', 'background':'white'}
+
+        if ocean:
+            with open(ocean_proj_filepath) as fprj:
+                oprj = fprj.read()
+
+            ocean_feature = ShapelyFeature(Reader(ocean_shapefile_path).geometries(),
+                                        crs=ccrs.CRS(oprj, globe=None),
+                                        facecolor=colors['ocean'],
+                                        edgecolor='none',
+                                        zorder=zorders['ocean'],
+                                        alpha=1)
+            ax.add_feature(ocean_feature)
+
+
+        if land:
+            with open(land_proj_filepath) as fprj:
+                lprj = fprj.read() # read the proj4 string
+
+            land_feature = ShapelyFeature(Reader(land_shapefile_path).geometries(),
+                                        crs=ccrs.CRS(lprj, globe=None), # create crs from proj string
+                                        facecolor=colors['land'],
+                                        edgecolor='none',
+                                        zorder=zorders['land'],
+                                        alpha=1)
+            ax.add_feature(land_feature)
+
+        if coastline:
+            with open(land_proj_filepath) as fprj:
+                cprj = fprj.read()
+
+            coastline_feature = ShapelyFeature(Reader(land_shapefile_path).geometries(),
+                                        crs=ccrs.CRS(cprj, globe=None),
+                                        facecolor='none',
+                                        edgecolor=colors['coastline'],
+                                        linewidth=1,
+                                        zorder=zorders['coastline'],
+                                        alpha=1)
+            ax.add_feature(coastline_feature)
+
+        if gridlines:
+            gl = ax.gridlines(linewidth=2.5, color='darkgray',
+                        draw_labels=True, zorder=zorders['gridlines'], alpha=1, linestyle=(0, (1, 1)),
+                        x_inline=False, y_inline=y_inline, crs=ccrs_data)
+
+            gl.xformatter = LongitudeFormatter()
+            gl.yformatter = LatitudeFormatter()
+            gl.xlocator = mticker.FixedLocator(np.arange(-180, 180, dx))
+            gl.ylocator = mticker.FixedLocator(np.arange(0, 90, dy))
+            gl.xlabel_style = {'size': int(12 * scale), 'color': x_fontcolor}
+            gl.ylabel_style = {'size': int(12 * scale), 'color': y_fontcolor}
+            gl.rotate_labels = False
+            gl.top_labels    = True
+            gl.right_labels  = True
+            gl.bottom_labels = True
+            gl.left_labels  = True
+            gl.xpadding = 15
+            gl.ypadding = 5
+
+        # for spine in ax.spines.values():
+        #     if cartopy_black:
+        #         spine.set_edgecolor('white')
+        #     else:
+        #         spine.set_edgecolor('black')
+
+        #     spine.set_linewidth(1.5)
 
 
     def convert_ir_ctp(self, ctp_ir_arr):
