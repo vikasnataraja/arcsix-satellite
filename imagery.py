@@ -647,8 +647,8 @@ class Imagery:
             ax.add_feature(cartopy.feature.COASTLINE.with_scale('10m'), zorder=zorders['coastline'], edgecolor=colors['coastline'], linewidth=1, alpha=1)
 
         if gridlines:
-            gl = ax.gridlines(linewidth=1.5, color='darkgray',
-                        draw_labels=True, zorder=zorders['gridlines'], alpha=0.75, linestyle=(0, (1, 1)),
+            gl = ax.gridlines(linewidth=2, color='black',
+                        draw_labels=True, zorder=zorders['gridlines'], alpha=1, linestyle=(0, (1, 1)),
                         x_inline=x_inline, y_inline=y_inline, crs=ccrs_data)
 
             gl.xformatter = LongitudeFormatter()
@@ -1079,7 +1079,7 @@ class Imagery:
                         transform=util.plot_util.proj_data)
 
         title = "{} ({}) True Color - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax, title=title)
+        self.add_ancillary(ax, title=title, scale=1.3)
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
