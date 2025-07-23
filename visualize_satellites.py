@@ -10,6 +10,7 @@ from tqdm import tqdm
 from imagery import Imagery
 
 import warnings
+from joblib import Parallel, delayed
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -589,6 +590,57 @@ def get_extent(fdir):
     return extent
 
 
+def process_fdir(fdir, args):
+    """
+    Processes a single directory of satellite data.
+    This function is designed to be called in parallel.
+    """
+    try:
+        dt = os.path.basename(fdir)
+        print("Currently analyzing:", dt)  # date
+        extent, start_dt_hhmm, end_dt_hhmm = get_metadata(fdir)
+        outdir = args.outdir
+
+        all_ret_l1 = []
+        all_ret_l2 = []
+
+        if args.nrt:
+            ret_l1 = save_to_file_modis_viirs_ref_geo(
+                fdir, outdir, extent,
+                geojson_fpath=args.geojson,
+                buoys=args.buoys,
+                start_dt=start_dt_hhmm,
+                end_dt=end_dt_hhmm,
+                quicklook_fdir=args.quicklook_fdir,
+                norway_ship=args.norway_ship,
+                odin_ship=args.odin_ship,
+                mode=args.mode,
+                max_hours=args.max_hours
+            )
+            if ret_l1:
+                all_ret_l1.extend(ret_l1)
+
+            ret_l2 = save_to_file_modis_viirs_geo_cld_opt(
+                fdir, outdir, extent,
+                geojson_fpath=args.geojson,
+                buoys=args.buoys,
+                start_dt=start_dt_hhmm,
+                end_dt=end_dt_hhmm,
+                quicklook_fdir=args.quicklook_fdir,
+                norway_ship=None,
+                odin_ship=None,
+                mode=args.mode
+            )
+            if ret_l2:
+                all_ret_l2.extend(ret_l2)
+
+        return all_ret_l1, all_ret_l2
+    except Exception as e:
+        print(f"Error processing directory {fdir}: {e}")
+        return [], []
+
+
+
 if __name__ == "__main__":
     START_TIME = datetime.datetime.now()
 
@@ -645,36 +697,31 @@ if __name__ == "__main__":
 
     print("Message [visualize_satellites]: {} sub-directories will be analyzed".format(len(subdirs)))
     """
-    for fdir in subdirs:
-        dt = os.path.basename(fdir)
-        print("Currently analyzing:", dt) # date
-        # year, month, date, hour, minute, sec, extent = get_metadata(fdir)
-        extent, start_dt_hhmm, end_dt_hhmm = get_metadata(fdir)
-        start_dt_hhmm_str = start_dt_hhmm.strftime('%Y-%m-%d-%H%M')
-        end_dt_hhmm_str   = end_dt_hhmm.strftime('%Y-%m-%d-%H%M')
+    # Use joblib to parallelize the processing of directories
+    # n_jobs=-1 uses all available CPU cores.
+    results = Parallel(n_jobs=-1)(delayed(process_fdir)(fdir, args) for fdir in subdirs)
 
-        outdir = args.outdir
+    # Consolidate and print results after all parallel jobs are finished
+    final_ret_l1 = []
+    final_ret_l2 = []
+    for ret_l1, ret_l2 in results:
+        final_ret_l1.extend(ret_l1)
+        final_ret_l2.extend(ret_l2)
 
-        if args.nrt:
+    if final_ret_l1:
+        print('Message [visualize_satellites] Level-1 products visualized for:')
+        for i in sorted(final_ret_l1):
+            print(i)
+    else:
+        print('Message [visualize_satellites] No Level-1 products were processed on this run')
 
-            ret_l1 = save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=args.norway_ship, odin_ship=args.odin_ship, mode=args.mode, max_hours=args.max_hours)
+    if final_ret_l2:
+        print('Message [visualize_satellites] Level-2 products visualized for:')
+        for j in sorted(final_ret_l2):
+            print(j)
+    else:
+        print('Message [visualize_satellites] No Level-2 products were processed on this run')
 
-            if len(ret_l1) > 0:
-                print('Message [visualize_satellites] Level-1 products visualized for:')
-                for i in ret_l1:
-                    print(i)
-            else:
-                print('Message [visualize_satellites] No Level-1 products were processed on this run')
-            """
-            ret_l2 = save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath=args.geojson, buoys=args.buoys, start_dt=start_dt_hhmm, end_dt=end_dt_hhmm, quicklook_fdir=args.quicklook_fdir, norway_ship=None, odin_ship=None, mode=args.mode)
-
-            if len(ret_l2) > 0:
-                print('Message [visualize_satellites] Level-2 products visualized for:')
-                for j in ret_l2:
-                    print(j)
-            else:
-                print('Message [visualize_satellites] No Level-2 products were processed on this run')
-            """
 
     END_TIME = datetime.datetime.now()
     print('Time taken to execute {}: {}'.format(os.path.basename(__file__), END_TIME - START_TIME))
