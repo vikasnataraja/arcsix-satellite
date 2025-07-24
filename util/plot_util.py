@@ -6,19 +6,45 @@ import matplotlib.font_manager as font_manager
 import cartopy.crs as ccrs
 
 # Add every font at the specified location
-if 'MPL_FONT_DIR' in os.environ.keys():
-    font_dir = [os.environ['MPL_FONT_DIR']]
+# parent directory
+current_dir = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..'))
+
+# set matplotlib style
+MPL_STYLE_PATH = os.path.join(current_dir, 'util/plotting_utils/sifsat_whitestyle.mplstyle')
+
+
+def set_plot_fonts(plt, serif_style='sans-serif', font='Helvetica Neue'):
+    """
+    Set the fonts for matplotlib plots.
+    This function configures the font settings for matplotlib plots by adding
+    custom fonts from a specified directory and setting the global font family.
+
+    Args:
+    ----
+        plt : module
+            The matplotlib.pyplot module.
+        serif_style : str, optional
+            The style of the font family to use, one of 'serif' or 'sans-serif'.
+        font : str, optional
+            The name of the font to use (default is 'Helvetica Neue').
+    """
+
+    # look for fonts in the fonts directory
+    all_fonts_dir = os.path.join(current_dir, 'util/plotting_utils/fonts/')
+    font_dir = [os.path.join(all_fonts_dir, f) for f in os.listdir(all_fonts_dir) if os.path.isdir(os.path.join(all_fonts_dir, f))]
+    # add font if available from user's environment
+    if 'MPL_FONT_DIR' in os.environ.keys():
+        font_dir.append(os.environ['MPL_FONT_DIR'])
+
+    # add all the fonts to matplotlib's library
     for font in font_manager.findSystemFonts(font_dir):
         font_manager.fontManager.addfont(font)
 
-# set matplotlib style
-if 'MPL_STYLE' in os.environ.keys():
-    mpl_style = os.environ['MPL_STYLE']
-else:
-    mpl_style = 'ggplot'
+    # set font family globally (in-place for plt)
+    plt.rc('font', **{'family':'{}'.format(serif_style),
+                      '{}'.format(serif_style):['{}'.format(font)]})
 
-# Set font family globally
-plt.rc('font',**{'family':'serif','serif':['Helvetica Neue']})
+
 
 ############################## Cloud phase IR colormap ##############################
 ctp_ir_cmap_arr = np.array([
@@ -87,8 +113,8 @@ ccrs_views =        {'lincoln': {'view_extent': [-130, 50, 76, 89],
                     'villum': {'view_extent': [-40, 0, 80, 90],
                                             'vlon': -40,
                                             'vlat': 80},
-                    'villum_to_north_pole': {'view_extent': [-40, 5, 80, 90],
-                                            'vlon': -30,
+                    'villum_to_north_pole': {'view_extent': [-50, 10, 80, 90],
+                                            'vlon': -35,
                                             'vlat': 82},
                 }
 
