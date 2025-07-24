@@ -20,6 +20,8 @@ from cartopy.io.shapereader import Reader
 from cartopy.feature import ShapelyFeature
 
 import util.plot_util
+from util.plot_util import MPL_STYLE_PATH, set_plot_fonts
+set_plot_fonts(plt, font='Helvetica Neue')
 # import util.constants
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -889,7 +891,7 @@ class Imagery:
             img_fci = self.mask_geojson(lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -977,7 +979,7 @@ class Imagery:
             img_fci = self.mask_geojson(lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -1068,7 +1070,7 @@ class Imagery:
             rgb = self.mask_geojson(lon_2d, lat_2d, rgb, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -1154,7 +1156,7 @@ class Imagery:
             img_fci = self.mask_geojson(lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -1244,7 +1246,7 @@ class Imagery:
             img_fci = self.mask_geojson(lon_2d, lat_2d, img_fci, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(20, 20))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 1, figure=fig)
         ax = fig.add_subplot(gs[0], projection=proj_plot)
 
@@ -1371,7 +1373,7 @@ class Imagery:
         ##############################################################
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_lwp,
@@ -1493,7 +1495,7 @@ class Imagery:
             im_iwp_1621 = self.mask_geojson(lon_2d, lat_2d, im_iwp_1621, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 2, figure=fig)
         ##############################################################
 
@@ -1587,7 +1589,7 @@ class Imagery:
             im_cot_1621 = self.mask_geojson(lon_2d, lat_2d, im_cot_1621, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_cot,
@@ -1689,7 +1691,7 @@ class Imagery:
         im_ctp_swir = im_ctp_swir.astype('int8')
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         y00 = ax00.pcolormesh(lon_2d, lat_2d, im_ctp_swir,
@@ -1773,7 +1775,7 @@ class Imagery:
             im_ctt = self.mask_geojson(lon_2d, lat_2d, im_ctt, proj_plot, util.plot_util.proj_data)
 
         fig = plt.figure(figsize=(40, 40))
-        plt.style.use(util.plot_util.mpl_style)
+        plt.style.use(MPL_STYLE_PATH)
         gs  = GridSpec(1, 2, figure=fig)
         ax00 = fig.add_subplot(gs[0], projection=proj_plot)
         im_cth_binned = self.bin_cth_to_class(im_cth)
