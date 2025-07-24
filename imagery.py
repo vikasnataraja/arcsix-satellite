@@ -1034,9 +1034,9 @@ class Imagery:
         return 1
 
 
-    def create_true_color_imagery(self, lon_2d, lat_2d, red, green, blue, sza):
+    def create_true_color_imagery(self, lon_2d, lat_2d, red, green, blue, sza, proj_plot=ccrs.PlateCarree()):
 
-        proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
+        # proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
         if not os.path.exists(self.outdir):
             os.makedirs(self.outdir)

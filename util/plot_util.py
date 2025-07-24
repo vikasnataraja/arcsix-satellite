@@ -113,7 +113,7 @@ ccrs_views =        {'lincoln': {'view_extent': [-130, 50, 76, 89],
                     'villum': {'view_extent': [-40, 0, 80, 90],
                                             'vlon': -40,
                                             'vlat': 80},
-                    'villum_to_north_pole': {'view_extent': [-50, 10, 80, 90],
+                    'villum_to_north_pole': {'view_extent': [-50, 10, 81, 90],
                                             'vlon': -35,
                                             'vlat': 82},
                 }

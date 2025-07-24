@@ -5,6 +5,8 @@ import numpy as np
 from util.arctic_gridding_utils import modis_l1b, modis_03, modis_l2, viirs_l1b, viirs_03, viirs_cldprop_l2
 from util.arctic_gridding_utils import within_range, get_satellite_group_name
 import util.constants
+from util.plot_util import ccrs_views
+import cartopy.crs as ccrs
 import datetime
 from tqdm import tqdm
 from imagery import Imagery
@@ -501,7 +503,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                                      quicklook_fdir=quicklook_fdir,
                                      mode=mode) # initialize class object
 
-            _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d)
+            _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d, proj_plot=ccrs.NearsidePerspective(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat']))
 
             """
             _ = arcsix_imagery.create_false_color_721_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_2130, green=ref_860, blue=ref_650, sza=sza_2d)
