@@ -1081,7 +1081,13 @@ class Imagery:
                         transform=util.plot_util.proj_data)
 
         title = "{} ({}) True Color - ".format(self.instrument, self.satellite) + dt_title
-        self.add_ancillary(ax, title=title, scale=1.3)
+        land_proj_fpath = None
+        ocean_proj_fpath = None
+        land_shp_fpath = None
+        ocean_shp_path = None
+
+        # self.add_ancillary(ax, title=title, scale=1.3)
+        self.add_esri_features(ax, land_proj_filepath=land_proj_fpath, ocean_proj_filepath=ocean_proj_fpath, land_shapefile_path=land_shp_fpath, ocean_shapefile_path=ocean_shp_path, title=title, scale=1.3)
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
