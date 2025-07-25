@@ -694,35 +694,39 @@ class Imagery:
 
 
 
-    def add_esri_features(ax, land_proj_filepath, ocean_proj_filepath, land_shapefile_path, ocean_shapefile_path, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, ocean=True, gridlines=True, coastline=True, land=True, x_fontcolor='black', y_fontcolor='black', zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None, y_inline=True):
+    def add_esri_features(self, ax, land_proj_filepath, ocean_proj_filepath, land_shapefile_path, ocean_shapefile_path, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, ocean=True, gridlines=True, coastline=True, land=True, x_fontcolor='black', y_fontcolor='black', zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None, y_inline=True):
         """
-        Add ESRI features and styling elements (title, ocean/land color, coastlines, gridlines) to a cartopy map plot.
+        Add ESRI features and styling elements to a cartopy map plot.
+
+        This function layers geographic features from ESRI shapefiles (land, ocean, coastlines)
+        onto a given matplotlib/cartopy axes object. It also adds and styles common map
+        elements like a title, gridlines, and labels.
 
         Args:
         ----
-            ax: A matplotlib or cartopy axes object where the features will be drawn.
-            title (str, optional): The title of the plot. Defaults to None.
-            scale (float, optional): A scaling factor for text size. Defaults to 1.
-            dx (int, optional): Longitude spacing in degrees. Defaults to 20.
-            dy (int, optional): Latitude spacing in degrees. Defaults to 5.
-            cartopy_black (bool, optional): Whether to use a black color scheme for background
-                and cartographic features. Defaults to False.
-            ccrs_data (cartopy.crs, optional): Coordinate reference system to use
-                for the plot. Defaults to ccrs.PlateCarree().
-            coastline (bool, optional): Whether to draw coastlines. Defaults to True.
-            ocean (bool, optional): Whether to fill ocean areas. Defaults to True.
-            gridlines (bool, optional): Whether to draw gridlines. Defaults to True.
-            land (bool, optional): Whether to fill land areas. Defaults to True.
-            x_fontcolor (str, optional): Font color for x-axis gridline labels. Defaults to 'black'.
-            y_fontcolor (str, optional): Font color for y-axis gridline labels. Defaults to 'black'.
-            zorders (dict, optional): Z-order values for different features (land, ocean, coastline,
-                gridlines). Defaults to {'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}.
-            colors (dict, optional): Color mappings for features like ocean, land, coastline,
-                title, and background. If None, defaults are used.
+            ax (matplotlib.axes.Axes): The axes object where features will be drawn.
+            land_proj_filepath (str): Filepath to the projection file (.prj) for the land data.
+            ocean_proj_filepath (str): Filepath to the projection file (.prj) for the ocean data.
+            land_shapefile_path (str): Filepath to the land shapefile (.shp).
+            ocean_shapefile_path (str): Filepath to the ocean shapefile (.shp).
+            dx (int, optional): Longitude spacing in degrees for gridlines. Defaults to 20.
+            dy (int, optional): Latitude spacing in degrees for gridlines. Defaults to 5.
+            cartopy_black (bool, optional): If True, use a black color scheme for the map
+            background and features. Defaults to False.
+            ccrs_data (cartopy.crs, optional): Coordinate reference system for the plot's
+            gridlines. Defaults to ccrs.PlateCarree().
+            ocean (bool, optional): Whether to draw and fill ocean areas. Defaults to True.
+            land (bool, optional): Whether to draw and fill land areas. Defaults to True.
+            zorders (dict, optional): Z-order values for drawing features. Higher values are
+            drawn on top. Defaults to {'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}.
+            colors (dict, optional): Color mappings for features like 'ocean', 'land', 'coastline',
+            'title', and 'background'. If None, defaults are used based on `cartopy_black`.
+            y_inline (bool, optional): Controls if y-axis gridline labels are drawn inside the plot.
+            Passed to `ax.gridlines`. Defaults to True.
 
         Returns:
         -------
-            None, modifies axis in-place
+            None: The function modifies the provided `ax` object in-place.
         """
 
         if ccrs_data is None:
