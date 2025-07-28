@@ -1281,9 +1281,15 @@ class Imagery:
                 # Legend labels
                 legend_labels = ['NASA G-III Science Flight on {}'.format(dt.strftime('%d %B, %Y'))]
 
-            # Create the legend
-            leg0 = ax.legend(handles=legend_handles, labels=legend_labels, loc='lower left', bbox_to_anchor=(0, 0), facecolor='none', fancybox=False, shadow=False, frameon=True, prop={'size': 12}, edgecolor='black', borderaxespad=0)
-            leg0.get_frame().set_linewidth(1.5)
+            else:
+                # No flights on this day
+                legend_handles = []
+                legend_labels = []
+
+            if len(legend_handles) > 0:
+                # Create the legend
+                leg0 = ax.legend(handles=legend_handles, labels=legend_labels, loc='lower left', bbox_to_anchor=(0, 0), facecolor='none', fancybox=False, shadow=False, frameon=True, prop={'size': 12}, edgecolor='black', borderaxespad=0)
+                leg0.get_frame().set_linewidth(1.5)
 
 
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
