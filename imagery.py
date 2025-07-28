@@ -928,7 +928,7 @@ class Imagery:
 
         # current flight info
         dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
-        dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d_%H%MZ")
+        dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ").date()  # convert to date object and remove hours minutes seconds
         dt_str_ymd = dt.strftime("%Y%m%d")
 
         # P-3 flights
@@ -942,11 +942,11 @@ class Imagery:
             df_p3 = pd.read_csv(p3_fname)
 
             # prior flights
-            if key_dt < dt_str_ymd:
+            if key_dt < dt:
                 ax.plot(df_p3['Longitude'], df_p3['Latitude'], color='red', alpha=0.2, transform=proj_data)
 
             # current flight
-            if key_dt == dt_str_ymd:
+            if key_dt == dt:
                 ax.plot(df_p3['Longitude'], df_p3['Latitude'], color='red', alpha=0.8, transform=proj_data)
 
             # no need to plot future flights
@@ -962,11 +962,11 @@ class Imagery:
             df_g3 = pd.read_csv(g3_fname)
 
             # prior flights
-            if key_dt < dt_str_ymd:
+            if key_dt < dt:
                 ax.plot(df_g3['Longitude'], df_g3['Latitude'], color='blue', alpha=0.2, transform=proj_data)
 
             # current flight
-            if key_dt == dt_str_ymd:
+            if key_dt == dt:
                 ax.plot(df_g3['Longitude'], df_g3['Latitude'], color='blue', alpha=0.8, transform=proj_data)
 
             # no need to plot future flights
@@ -1241,7 +1241,7 @@ class Imagery:
                                   title=title, scale=1.3)
         if self.flight_nav_dir is not None: # plot flight paths
             dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
-            dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d_%H%MZ")
+            dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
             dt_str_ymd = dt.strftime("%Y%m%d")
             self.plot_flights(ax, proj_data=util.plot_util.proj_data)
 
