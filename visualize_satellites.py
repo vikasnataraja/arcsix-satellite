@@ -502,6 +502,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                                      norway_ship=norway_ship,
                                      odin_ship=odin_ship,
                                      quicklook_fdir=quicklook_fdir,
+                                     flight_nav_dir=flight_nav_dir,
                                      mode=mode) # initialize class object
 
             _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d, proj_plot=ccrs.NearsidePerspective(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat']), use_fast_render=True, flight_nav_dir=flight_nav_dir)
