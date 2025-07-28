@@ -8,6 +8,7 @@ import cartopy
 import warnings
 import subprocess
 import numpy as np
+import pandas as pd
 
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
@@ -27,6 +28,40 @@ set_plot_fonts(plt, font='Helvetica Neue')
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+p3_metnav_fnames = {'20240528': 'ARCSIX-MetNav_P3B_20240528_RB.csv',
+                    '20240530': 'ARCSIX-MetNav_P3B_20240530_RB.csv',
+                    '20240531': 'ARCSIX-MetNav_P3B_20240531_RA.csv',
+                    '20240603': 'ARCSIX-MetNav_P3B_20240603_RA.csv',
+                    '20240605': 'ARCSIX-MetNav_P3B_20240605_RA.csv',
+                    '20240606': 'ARCSIX-MetNav_P3B_20240606_RA.csv',
+                    '20240607': 'ARCSIX-MetNav_P3B_20240607_RA.csv',
+                    '20240610': 'ARCSIX-MetNav_P3B_20240610_RA.csv',
+                    '20240611': 'ARCSIX-MetNav_P3B_20240611_RA.csv',
+                    '20240613': 'ARCSIX-MetNav_P3B_20240613_RA.csv',
+                    '20240725': 'ARCSIX-MetNav_P3B_20240725_RA.csv',
+                    '20240729': 'ARCSIX-MetNav_P3B_20240729_RA.csv',
+                    '20240730': 'ARCSIX-MetNav_P3B_20240730_RA.csv',
+                    '20240801': 'ARCSIX-MetNav_P3B_20240801_RA.csv',
+                    '20240802': 'ARCSIX-MetNav_P3B_20240802_RA.csv',
+                    '20240807': 'ARCSIX-MetNav_P3B_20240807_RA.csv',
+                    '20240808': 'ARCSIX-MetNav_P3B_20240808_RA.csv',
+                    '20240809': 'ARCSIX-MetNav_P3B_20240809_RA.csv',
+                    '20240815': 'ARCSIX-MetNav_P3B_20240815_RA.csv'}
+
+g3_metnav_fnames = {'20240528': 'GIII_20240528.csv',
+                    '20240530': 'GIII_20240530.csv',
+                    '20240531': 'GIII_20240531.csv',
+                    '20240603': 'GIII_20240603.csv',
+                    '20240605': 'GIII_20240605.csv',
+                    '20240606': 'GIII_20240606.csv',
+                    '20240607': 'GIII_20240607.csv',
+                    '20240610': 'GIII_20240610.csv',
+                    '20240611': 'GIII_20240611.csv',
+                    '20240613': 'GIII_20240613.csv',
+                    '20240807': 'GIII_20240807.csv',
+                    '20240808': 'GIII_20240808.csv',
+                    '20240809': 'GIII_20240809.csv',
+                    '20240815': 'GIII_20240815.csv'}
 
 class Imagery:
 
@@ -54,6 +89,7 @@ class Imagery:
                  buoys,
                  norway_ship,
                  odin_ship,
+                 flight_nav_dir,
                  mode,
                  quicklook_fdir,
                  verbose=False):
@@ -68,6 +104,7 @@ class Imagery:
         self.odin_ship       = odin_ship
         self.mode            = mode
         self.quicklook_fdir  = quicklook_fdir
+        self.flight_nav_dir  = flight_nav_dir
         self.verbose         = verbose
 
         self.get_instrument()
@@ -696,7 +733,7 @@ class Imagery:
     # Class variable to cache shapefile features
     _shapefile_cache = {}
 
-    def add_esri_features(self, ax, land_proj_filepath, ocean_proj_filepath, land_shapefile_path, ocean_shapefile_path, simplify_geometry, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, ocean=True, gridlines=True, coastline=True, land=True, x_fontcolor='black', y_fontcolor='black', zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None, y_inline=True):
+    def add_esri_features(self, ax, land_proj_filepath, ocean_proj_filepath, land_shapefile_path, ocean_shapefile_path, simplify_geometry=True, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, ocean=True, gridlines=True, coastline=True, land=True, x_fontcolor='black', y_fontcolor='black', zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None, y_inline=True):
         """
         Add ESRI features and styling elements to a cartopy map plot.
 
@@ -874,6 +911,67 @@ class Imagery:
         #         spine.set_edgecolor('black')
 
         #     spine.set_linewidth(1.5)
+
+    def plot_flights(self, ax, proj_data):
+        """
+        Add flight paths (P-3 in red and G-III in blue) to a cartopy map plot for current flight.
+
+        Args:
+            ax: A matplotlib or cartopy axes object where the flight paths will be drawn.
+            proj_data: The projection used for the data.
+
+        Returns:
+            None
+        """
+        if proj_data is None:
+            proj_data = ccrs.PlateCarree()
+
+        # current flight info
+        dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
+        dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d_%H%MZ")
+        dt_str_ymd = dt.strftime("%Y%m%d")
+
+        # P-3 flights
+        # plot prior flights in gray, current day's flight in red/blue
+        for key in p3_metnav_fnames.keys():
+            key_dt = datetime.datetime.strptime(key, "%Y%m%d")
+            p3_fname = os.path.join(self.flight_nav_dir, key, p3_metnav_fnames[key])
+            if not os.path.isfile(p3_fname): # if p3 file exists, read it otherwise skip processing
+                continue
+
+            df_p3 = pd.read_csv(p3_fname)
+
+            # prior flights
+            if key_dt < dt_str_ymd:
+                ax.plot(df_p3['Longitude'], df_p3['Latitude'], color='red', alpha=0.2, transform=proj_data)
+
+            # current flight
+            if key_dt == dt_str_ymd:
+                ax.plot(df_p3['Longitude'], df_p3['Latitude'], color='red', alpha=0.8, transform=proj_data)
+
+            # no need to plot future flights
+
+        # G-III flights
+        # plot prior flights in gray, current day's flight in red/blue
+        for key in g3_metnav_fnames.keys():
+            key_dt = datetime.datetime.strptime(key, "%Y%m%d")
+            g3_fname = os.path.join(self.flight_nav_dir, key, g3_metnav_fnames[key])
+            if not os.path.isfile(g3_fname): # if g3 file exists, read it otherwise skip processing
+                continue
+
+            df_g3 = pd.read_csv(g3_fname)
+
+            # prior flights
+            if key_dt < dt_str_ymd:
+                ax.plot(df_g3['Longitude'], df_g3['Latitude'], color='blue', alpha=0.2, transform=proj_data)
+
+            # current flight
+            if key_dt == dt_str_ymd:
+                ax.plot(df_g3['Longitude'], df_g3['Latitude'], color='blue', alpha=0.8, transform=proj_data)
+
+            # no need to plot future flights
+
+        return ax
 
 
     def convert_ir_ctp(self, ctp_ir_arr):
@@ -1141,6 +1239,52 @@ class Imagery:
                                   land_shapefile_path=land_shp_fpath,
                                   ocean_shapefile_path=ocean_shp_path,
                                   title=title, scale=1.3)
+        if self.flight_nav_dir is not None: # plot flight paths
+            dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
+            dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d_%H%MZ")
+            dt_str_ymd = dt.strftime("%Y%m%d")
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data)
+
+            # if both flights flew on this day, add legend labels for both
+            if dt_str_ymd in p3_metnav_fnames.keys() and dt_str_ymd in g3_metnav_fnames.keys():
+                # Create custom legend handles
+                legend_handles = [
+                    # P-3
+                    matplotlib.lines.Line2D([0], [0], color='red'),
+                    # G-III
+                    matplotlib.lines.Line2D([0], [0], color='blue'),
+                ]
+
+                # Legend labels
+                legend_labels = ['NASA P-3 Science Flight on {}'.format(dt.strftime('%d %B, %Y')), 'NASA G-III Science Flight on {}'.format(dt.strftime('%d %B, %Y'))]
+
+            # P-3 only flight
+            elif dt_str_ymd in p3_metnav_fnames.keys() and dt_str_ymd not in g3_metnav_fnames.keys():
+                # Create custom legend handles
+                legend_handles = [
+                    # P-3
+                    matplotlib.lines.Line2D([0], [0], color='red'),
+                ]
+
+                # Legend labels
+                legend_labels = ['NASA P-3 Science Flight on {}'.format(dt.strftime('%d %B, %Y'))]
+
+            # G-III only flight
+            elif dt_str_ymd not in p3_metnav_fnames.keys() and dt_str_ymd in g3_metnav_fnames.keys():
+                # Create custom legend handles
+                legend_handles = [
+                    # G-III
+                    matplotlib.lines.Line2D([0], [0], color='blue'),
+                ]
+
+                # Legend labels
+                legend_labels = ['NASA G-III Science Flight on {}'.format(dt.strftime('%d %B, %Y'))]
+
+            # Create the legend
+            leg0 = ax.legend(handles=legend_handles, labels=legend_labels, loc='lower left', bbox_to_anchor=(0, 0), facecolor='none', fancybox=False, shadow=False, frameon=True, prop={'size': 12}, edgecolor='black', borderaxespad=0)
+            leg0.get_frame().set_linewidth(1.5)
+
+
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
         if os.path.isfile(full_fname):
             if self.verbose:
@@ -1149,7 +1293,7 @@ class Imagery:
 
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         metadata = self.create_metadata()
-        fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
+        fig.savefig(full_fname, dpi=300, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
 
         if self.quicklook_fdir is not None: # generate quicklook imagery

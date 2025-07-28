@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import numpy as np
+import pandas as pd
 from util.arctic_gridding_utils import modis_l1b, modis_03, modis_l2, viirs_l1b, viirs_03, viirs_cldprop_l2
 from util.arctic_gridding_utils import within_range, get_satellite_group_name
 import util.constants
@@ -376,7 +377,7 @@ def get_modis_viirs_ref_geo(fdir):
     return fref, f03
 
 
-def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, start_dt, end_dt, quicklook_fdir, mode, max_hours):
+def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, flight_nav_dir, start_dt, end_dt, quicklook_fdir, mode, max_hours):
 
     fref, f03 = get_modis_viirs_ref_geo(fdir)
     if (len(fref) == 0) or (len(f03) == 0):
@@ -503,7 +504,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
                                      quicklook_fdir=quicklook_fdir,
                                      mode=mode) # initialize class object
 
-            _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d, proj_plot=ccrs.NearsidePerspective(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat']), use_fast_render=True)
+            _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d, proj_plot=ccrs.NearsidePerspective(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat']), use_fast_render=True, flight_nav_dir=flight_nav_dir)
 
             """
             _ = arcsix_imagery.create_false_color_721_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_2130, green=ref_860, blue=ref_650, sza=sza_2d)
@@ -616,25 +617,26 @@ def process_fdir(fdir, args):
                 quicklook_fdir=args.quicklook_fdir,
                 norway_ship=args.norway_ship,
                 odin_ship=args.odin_ship,
+                flight_nav_dir=args.flight_nav_fdir,
                 mode=args.mode,
                 max_hours=args.max_hours
             )
             if ret_l1:
                 all_ret_l1.extend(ret_l1)
 
-            ret_l2 = save_to_file_modis_viirs_geo_cld_opt(
-                fdir, outdir, extent,
-                geojson_fpath=args.geojson,
-                buoys=args.buoys,
-                start_dt=start_dt_hhmm,
-                end_dt=end_dt_hhmm,
-                quicklook_fdir=args.quicklook_fdir,
-                norway_ship=None,
-                odin_ship=None,
-                mode=args.mode
-            )
-            if ret_l2:
-                all_ret_l2.extend(ret_l2)
+            # ret_l2 = save_to_file_modis_viirs_geo_cld_opt(
+            #     fdir, outdir, extent,
+            #     geojson_fpath=args.geojson,
+            #     buoys=args.buoys,
+            #     start_dt=start_dt_hhmm,
+            #     end_dt=end_dt_hhmm,
+            #     quicklook_fdir=args.quicklook_fdir,
+            #     norway_ship=None,
+            #     odin_ship=None,
+            #     mode=args.mode
+            # )
+            # if ret_l2:
+            #     all_ret_l2.extend(ret_l2)
 
         return all_ret_l1, all_ret_l2
     except Exception as e:
@@ -660,6 +662,7 @@ if __name__ == "__main__":
     parser.add_argument('--odin_ship', type=str, metavar='', default=None, help='Path to the JSON file where icebreaker data is/will be stored')
     parser.add_argument('--mode', type=str, metavar='', default='lincoln', help='One of "baffin", "lincoln", or "platypus" ')
     parser.add_argument("--quicklook_fdir", type=str, default=None, help="Path to directory where quicklook images will be saved")
+    parser.add_argument("--flight_nav_fdir", type=str, default=None, help="Path to directory containing flight navigation data.")
     args = parser.parse_args()
 
     if not os.path.exists(args.outdir):
