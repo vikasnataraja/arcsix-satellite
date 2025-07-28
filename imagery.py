@@ -693,6 +693,8 @@ class Imagery:
                 ax.text(self.buoy_lons[bid][-1] + x_offset, self.buoy_lats[bid][-1] + y_offset, text, ha="center", va="center", transform=util.plot_util.proj_data, color=colors[i], fontsize=10, fontweight="bold", zorder=2)
 
 
+    # Class variable to cache shapefile features
+    _shapefile_cache = {}
 
     def add_esri_features(self, ax, land_proj_filepath, ocean_proj_filepath, land_shapefile_path, ocean_shapefile_path, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, ocean=True, gridlines=True, coastline=True, land=True, x_fontcolor='black', y_fontcolor='black', zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None, y_inline=True):
         """
@@ -728,7 +730,6 @@ class Imagery:
         -------
             None: The function modifies the provided `ax` object in-place.
         """
-
         if ccrs_data is None:
             ccrs_data = ccrs.PlateCarree()
 
@@ -740,46 +741,84 @@ class Imagery:
         if colors is None:
             if cartopy_black:
                 colors = {'ocean':'black', 'land':'black', 'coastline':'black', 'title':'white', 'background':'black'}
-
             else:
                 colors = {'ocean':'aliceblue', 'land':'#fcf4e8', 'coastline':'black', 'title':'black', 'background':'white'}
 
-        if ocean:
-            with open(ocean_proj_filepath) as fprj:
-                oprj = fprj.read()
+        # Create cache keys for the features
+        ocean_key = f"ocean_{ocean_shapefile_path}"
+        land_key = f"land_{land_shapefile_path}"
+        coast_key = f"coast_{land_shapefile_path}"
 
-            ocean_feature = ShapelyFeature(Reader(ocean_shapefile_path).geometries(),
-                                        crs=ccrs.CRS(oprj, globe=None),
-                                        facecolor=colors['ocean'],
-                                        edgecolor='none',
-                                        zorder=zorders['ocean'],
-                                        alpha=1)
+        if ocean:
+            # Check if ocean feature is already cached
+            if ocean_key in Imagery._shapefile_cache:
+                ocean_feature = Imagery._shapefile_cache[ocean_key]
+            else:
+                with open(ocean_proj_filepath) as fprj:
+                    oprj = fprj.read()
+                # Load geometries once and cache them
+                geometries = list(Reader(ocean_shapefile_path).geometries())
+                ocean_feature = ShapelyFeature(geometries,
+                                            crs=ccrs.CRS(oprj, globe=None),
+                                            facecolor=colors['ocean'],
+                                            edgecolor='none',
+                                            zorder=zorders['ocean'],
+                                            alpha=1)
+                Imagery._shapefile_cache[ocean_key] = ocean_feature
+
             ax.add_feature(ocean_feature)
 
-
         if land:
-            with open(land_proj_filepath) as fprj:
-                lprj = fprj.read() # read the proj4 string
+            # Check if land feature is already cached
+            if land_key in Imagery._shapefile_cache:
+                land_feature = Imagery._shapefile_cache[land_key]
+            else:
+                with open(land_proj_filepath) as fprj:
+                    lprj = fprj.read()
 
-            land_feature = ShapelyFeature(Reader(land_shapefile_path).geometries(),
-                                        crs=ccrs.CRS(lprj, globe=None), # create crs from proj string
-                                        facecolor=colors['land'],
-                                        edgecolor='none',
-                                        zorder=zorders['land'],
-                                        alpha=1)
+                # Cache the geometries to avoid re-reading the shapefile
+                geometries = list(Reader(land_shapefile_path).geometries())
+                land_feature = ShapelyFeature(geometries,
+                                            crs=ccrs.CRS(lprj, globe=None),
+                                            facecolor=colors['land'],
+                                            edgecolor='none',
+                                            zorder=zorders['land'],
+                                            alpha=1)
+                Imagery._shapefile_cache[land_key] = land_feature
+
             ax.add_feature(land_feature)
 
         if coastline:
-            with open(land_proj_filepath) as fprj:
-                cprj = fprj.read()
+            # Check if coastline feature is already cached
+            if coast_key in Imagery._shapefile_cache:
+                coastline_feature = Imagery._shapefile_cache[coast_key]
+            else:
+                with open(land_proj_filepath) as fprj:
+                    cprj = fprj.read()
 
-            coastline_feature = ShapelyFeature(Reader(land_shapefile_path).geometries(),
-                                        crs=ccrs.CRS(cprj, globe=None),
-                                        facecolor='none',
-                                        edgecolor=colors['coastline'],
-                                        linewidth=1,
-                                        zorder=zorders['coastline'],
-                                        alpha=1)
+                # Reuse geometries from land if possible
+                if land and land_key in Imagery._shapefile_cache:
+                    # Create a new feature with the same geometries but different styling
+                    coastline_feature = ShapelyFeature(Imagery._shapefile_cache[land_key].geometries(),
+                                               crs=ccrs.CRS(cprj, globe=None),
+                                               facecolor='none',
+                                               edgecolor=colors['coastline'],
+                                               linewidth=1,
+                                               zorder=zorders['coastline'],
+                                               alpha=1)
+                else:
+                    # Load geometries if not already loaded
+                    geometries = list(Reader(land_shapefile_path).geometries())
+                    coastline_feature = ShapelyFeature(geometries,
+                                                crs=ccrs.CRS(cprj, globe=None),
+                                                facecolor='none',
+                                                edgecolor=colors['coastline'],
+                                                linewidth=1,
+                                                zorder=zorders['coastline'],
+                                                alpha=1)
+
+                Imagery._shapefile_cache[coast_key] = coastline_feature
+
             ax.add_feature(coastline_feature)
 
         if gridlines:
@@ -1002,46 +1041,20 @@ class Imagery:
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
         plt.close()
 
-        if self.quicklook_fdir is not None: # generate quicklook imagery
+        # if self.quicklook_fdir is not None: # generate quicklook imagery
 
-            try: # reduce risk since this is lower priority
-                # granule extent ignored for now since NRT 03 files don't have the right lat lon limits
-                # instead preset
-                # gextent = [np.nanmin(lon_2d), np.nanmax(lon_2d), np.nanmin(lat_2d), np.nanmax(lat_2d)]
-                gextent = util.plot_util.ql_settings['extent']
+    def create_true_color_imagery(self, lon_2d, lat_2d, red, green, blue, sza, proj_plot=ccrs.PlateCarree(), use_fast_render=False):
+        """
+        Creates true color imagery from the given bands.
 
-                # generate figure
-                fig = plt.figure(figsize=(12, 12))
-                plt.style.use('default')
-                gs  = GridSpec(1, 1, figure=fig)
-                ax = fig.add_subplot(gs[0], projection=ccrs.Orthographic(central_longitude=np.mean(gextent[:2]),
-                                                                         central_latitude=np.mean(gextent[2:])))
-
-                ax.pcolormesh(lon_2d, lat_2d, img_fci,
-                            shading='nearest',
-                            zorder=2,
-                            transform=util.plot_util.ql_settings['proj_data'])
-                ax.set_xticks([])
-                ax.set_yticks([])
-                ax.set_extent(gextent, util.plot_util.ql_settings['proj_data'])
-                ax.set_aspect('auto')
-
-                # save the figure
-                ql_dt_str = self.ql_doy2date_str(self.acq_dt)
-                extent_xy = list(ax.get_xlim()) + list(ax.get_ylim())
-                ql_fname = "{}-{}_{}_{}_({:.2f},{:.2f},{:.2f},{:.2f})_({:.4f},{:.4f},{:.4f},{:.4f}).png".format(self.instrument.upper(), sat_fname.upper(), "FalseColor367", ql_dt_str, *extent_xy, *gextent)
-                ql_full_fname = os.path.join(self.quicklook_fdir, ql_fname)
-
-                fig.savefig(ql_full_fname, dpi=util.plot_util.ql_settings['dpi'], pad_inches=util.plot_util.ql_settings['pad_inches'], bbox_inches=util.plot_util.ql_settings['bbox_inches'], metadata=metadata)
-                plt.close()
-            except Exception as ql_err:
-                print('Error [false_color_367]: Following error occurred when creating {}\n {}'.format(ql_full_fname, ql_err))
-
-        return 1
-
-
-    def create_true_color_imagery(self, lon_2d, lat_2d, red, green, blue, sza, proj_plot=ccrs.PlateCarree()):
-
+        Args:
+            lon_2d, lat_2d: 2D arrays of longitude and latitude
+            red, green, blue: RGB bands
+            sza: Solar zenith angle
+            proj_plot: Projection to use for plotting
+            use_fast_render: If True, uses Cartopy's built-in features instead of ESRI shapefiles
+            resolution: Resolution of shapefiles to use ('10m', '50m', or '110m') if not using fast render
+        """
         # proj_plot = ccrs.Orthographic(central_longitude=util.plot_util.ccrs_views[self.mode]['vlon'], central_latitude=util.plot_util.ccrs_views[self.mode]['vlat'])
 
         if not os.path.exists(self.outdir):
@@ -1085,13 +1098,28 @@ class Imagery:
                         transform=util.plot_util.proj_data)
 
         title = "{} ({}) True Color - ".format(self.instrument, self.satellite) + dt_title
-        land_proj_fpath = None
-        ocean_proj_fpath = None
-        land_shp_fpath = None
-        ocean_shp_path = None
 
-        # self.add_ancillary(ax, title=title, scale=1.3)
-        self.add_esri_features(ax, land_proj_filepath=land_proj_fpath, ocean_proj_filepath=ocean_proj_fpath, land_shapefile_path=land_shp_fpath, ocean_shapefile_path=ocean_shp_path, title=title, scale=1.3)
+        if use_fast_render:
+            # Use built-in Cartopy features for faster rendering
+            self.add_ancillary(ax, title=title, scale=1.3)
+        else:
+            # Use ESRI shapefiles with specified resolution
+            land_proj_fpath = 'data/land_shapefiles/land.prj'
+            ocean_proj_fpath = 'data/ocean_shapefiles/ocean.prj'
+            land_shp_fpath = 'data/land_shapefiles/land.shp'
+            ocean_shp_path = 'data/ocean_shapefiles/ocean.shp'
+
+            self.add_esri_features(ax, land_proj_filepath=land_proj_fpath,
+                                  ocean_proj_filepath=ocean_proj_fpath,
+                                  land_shapefile_path=land_shp_fpath,
+                                  ocean_shapefile_path=ocean_shp_path,
+                                  title=title, scale=1.3)
+        full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
+        if os.path.isfile(full_fname):
+            if self.verbose:
+                print("Message [true_color]: {} skipped since it already exists.".format(full_fname))
+            return 0
+
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
