@@ -928,7 +928,8 @@ class Imagery:
 
         # current flight info
         dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
-        dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ").date()  # convert to date object and remove hours minutes seconds
+        dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
+        dt = dt.replace(hour=0, minute=0, second=0) # convert to date object and remove hours minutes seconds
         dt_str_ymd = dt.strftime("%Y%m%d")
 
         # P-3 flights
