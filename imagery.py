@@ -696,7 +696,7 @@ class Imagery:
     # Class variable to cache shapefile features
     _shapefile_cache = {}
 
-    def add_esri_features(self, ax, land_proj_filepath, ocean_proj_filepath, land_shapefile_path, ocean_shapefile_path, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, ocean=True, gridlines=True, coastline=True, land=True, x_fontcolor='black', y_fontcolor='black', zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None, y_inline=True):
+    def add_esri_features(self, ax, land_proj_filepath, ocean_proj_filepath, land_shapefile_path, ocean_shapefile_path, simplify_geometry, title=None, scale=1, dx=20, dy=5, cartopy_black=False, ccrs_data=None, ocean=True, gridlines=True, coastline=True, land=True, x_fontcolor='black', y_fontcolor='black', zorders={'land': 0, 'ocean': 1, 'coastline': 2, 'gridlines': 2}, colors=None, y_inline=True):
         """
         Add ESRI features and styling elements to a cartopy map plot.
 
@@ -748,6 +748,7 @@ class Imagery:
         ocean_key = f"ocean_{ocean_shapefile_path}"
         land_key = f"land_{land_shapefile_path}"
         coast_key = f"coast_{land_shapefile_path}"
+        from shapely.geometry import shape, mapping
 
         if ocean:
             # Check if ocean feature is already cached
@@ -756,8 +757,22 @@ class Imagery:
             else:
                 with open(ocean_proj_filepath) as fprj:
                     oprj = fprj.read()
+
                 # Load geometries once and cache them
                 geometries = list(Reader(ocean_shapefile_path).geometries())
+
+                # Simplify geometries if requested
+                if simplify_geometry:
+                    simplified_ocean_geometries = []
+                    for geom in geometries:
+                        if hasattr(geom, 'simplify'):
+
+                            simplified_ocean_geom = geom.simplify(0.01, preserve_topology=True)
+                            simplified_ocean_geometries.append(simplified_ocean_geom)
+                        else:
+                            simplified_ocean_geometries.append(geom)
+                    geometries = simplified_ocean_geometries
+
                 ocean_feature = ShapelyFeature(geometries,
                                             crs=ccrs.CRS(oprj, globe=None),
                                             facecolor=colors['ocean'],
@@ -778,6 +793,18 @@ class Imagery:
 
                 # Cache the geometries to avoid re-reading the shapefile
                 geometries = list(Reader(land_shapefile_path).geometries())
+                # Simplify geometries if requested
+                if simplify_geometry:
+                    simplified_land_geometries = []
+                    for geom in geometries:
+                        if hasattr(geom, 'simplify'):
+
+                            simplified_land_geom = geom.simplify(0.01, preserve_topology=True)
+                            simplified_land_geometries.append(simplified_land_geom)
+                        else:
+                            simplified_land_geometries.append(geom)
+                    geometries = simplified_land_geometries
+
                 land_feature = ShapelyFeature(geometries,
                                             crs=ccrs.CRS(lprj, globe=None),
                                             facecolor=colors['land'],
