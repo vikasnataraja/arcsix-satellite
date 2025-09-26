@@ -507,7 +507,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
 
             _ = arcsix_imagery.create_true_color_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_650, green=ref_555, blue=ref_470, sza=sza_2d, proj_plot=ccrs.NearsidePerspective(central_longitude=ccrs_views[mode]['vlon'], central_latitude=ccrs_views[mode]['vlat']), use_fast_render=True)
 
-            """
+
             _ = arcsix_imagery.create_false_color_721_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=ref_2130, green=ref_860, blue=ref_650, sza=sza_2d)
 
             if satellite != 'Aqua': # band 6 at 1640 is broken for Aqua
@@ -519,7 +519,7 @@ def save_to_file_modis_viirs_ref_geo(fdir, outdir, extent, geojson_fpath, buoys,
 
                 # 11micron-1.6-2.1 radiance
                 _ = arcsix_imagery.create_false_color_ir_imagery(lon_2d=lon2d_1km, lat_2d=lat2d_1km, red=rad_11000, green=rad_1640, blue=rad_2130)
-            """
+
             output_str = 'Processed {} acquired by {} from {}'.format(acq_dt, satellite, data_source)
             report.append(output_str)
             # print("Message [modis_viirs_ref_geo]: Successfully processed: ", acq_dt)
@@ -625,19 +625,19 @@ def process_fdir(fdir, args):
             if ret_l1:
                 all_ret_l1.extend(ret_l1)
 
-            # ret_l2 = save_to_file_modis_viirs_geo_cld_opt(
-            #     fdir, outdir, extent,
-            #     geojson_fpath=args.geojson,
-            #     buoys=args.buoys,
-            #     start_dt=start_dt_hhmm,
-            #     end_dt=end_dt_hhmm,
-            #     quicklook_fdir=args.quicklook_fdir,
-            #     norway_ship=None,
-            #     odin_ship=None,
-            #     mode=args.mode
-            # )
-            # if ret_l2:
-            #     all_ret_l2.extend(ret_l2)
+            ret_l2 = save_to_file_modis_viirs_geo_cld_opt(
+                fdir, outdir, extent,
+                geojson_fpath=args.geojson,
+                buoys=args.buoys,
+                start_dt=start_dt_hhmm,
+                end_dt=end_dt_hhmm,
+                quicklook_fdir=args.quicklook_fdir,
+                norway_ship=None,
+                odin_ship=None,
+                mode=args.mode
+            )
+            if ret_l2:
+                all_ret_l2.extend(ret_l2)
 
         return all_ret_l1, all_ret_l2
     except Exception as e:
