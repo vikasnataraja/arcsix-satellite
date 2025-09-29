@@ -542,7 +542,7 @@ def get_metadata(fdir):
 
     extent_str = meta[1][9:-2]
     extent     = [float(idx) for idx in extent_str.split(', ')]
-    ymd_str = meta[0][6:]
+    ymd_str = meta[0][6:].strip() # remove blank spaces
     if len(ymd_str) == 0:
         raise ValueError("Could not find a valid date in metadata.txt file")
 
@@ -550,8 +550,8 @@ def get_metadata(fdir):
         start_dt = datetime.datetime.strptime(ymd_str, '%Y-%m-%d')
         end_dt   = start_dt + datetime.timedelta(hours=23, minutes=59)
 
-    elif len(ymd_str) == 19:
-        start_dt = datetime.datetime.strptime(ymd_str, '%Y-%m-%d %H:%M:%S')
+    elif len(ymd_str) == 18:
+        start_dt = datetime.datetime.strptime(ymd_str, '%Y-%m-%d%H:%M:%S')
         end_dt   = datetime.datetime(start_dt.year, start_dt.month, start_dt.day, 23, 59, 59)
 
     else:
