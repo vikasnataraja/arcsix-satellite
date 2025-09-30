@@ -976,7 +976,7 @@ class Imagery:
         return ax
 
 
-    def plot_flights(self, ax, proj_data, dt=30):
+    def plot_flights(self, ax, proj_data, delta_t=30):
         """
         Add flight paths (P-3 in red and G-III in blue) to a cartopy map plot for current flight.
 
@@ -1016,18 +1016,19 @@ class Imagery:
 
         # add time text
         # convert ns to s
-        seconds = list(np.array((np.diff(df_p3['datetime'])/1e9), dtype='int'))
+        df_p3_datetime = pd.to_datetime(df_p3['datetime'])
+        seconds = list(np.array((np.diff(df_p3_datetime)/1e9), dtype='int'))
         seconds.insert(0, 0) # to help with indexing and make array same size as df
 
         # convert to minutes
         mins = np.cumsum(seconds)/60.
 
         # indices we want
-        dt_idx = np.where(mins % dt == 0.)[0]
+        delta_t_idx = np.where(mins % delta_t == 0.)[0]
 
-        for i in dt_idx:
+        for i in delta_t_idx:
             plon, plat = df_p3['Longitude'].iloc[i], df_p3['Latitude'].iloc[i]
-            time_text = df_p3['datetime'].iloc[i].strftime('%H:%M')
+            time_text = df_p3_datetime.iloc[i].strftime('%H:%M')
 
             # if (plon >= view_extent[0]) and (plon <= view_extent[1]) and (plat >= view_extent[2]) and (plat <= view_extent[3]):
             ax.text(plon, plat,
