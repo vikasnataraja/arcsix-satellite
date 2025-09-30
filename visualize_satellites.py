@@ -648,7 +648,7 @@ def process_fdir(fdir, args):
             )
             if ret_l1:
                 all_ret_l1.extend(ret_l1)
-# fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, start_dt, end_dt, quicklook_fdir, mode
+
             ret_l2 = save_to_file_modis_viirs_geo_cld_opt(
                 fdir, outdir, extent,
                 geojson_fpath=args.geojson,

@@ -993,13 +993,13 @@ class Imagery:
         ########### plot flight paths ###########
 
         # satellite date
-        dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
-        dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
-        dt = dt.replace(hour=0, minute=0, second=0) # convert to date object and remove hours minutes seconds
-        dt_str_ymd = dt.strftime("%Y%m%d")
+        sat_dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
+        sat_dt = datetime.datetime.strptime(sat_dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
+        sat_dt = sat_dt.replace(hour=0, minute=0, second=0) # convert to date object and remove hours minutes seconds
+        sat_dt_str_ymd = sat_dt.strftime("%Y%m%d")
 
         # P-3 flight
-        p3_fname = os.path.join(self.flight_nav_dir, dt_str_ymd, p3_metnav_fnames[dt_str_ymd])
+        p3_fname = os.path.join(self.flight_nav_dir, sat_dt_str_ymd, p3_metnav_fnames[sat_dt_str_ymd])
         if not os.path.isfile(p3_fname): # if p3 file exists, read it otherwise skip processing
             return
 
@@ -1007,7 +1007,7 @@ class Imagery:
         ax.plot(df_p3['Longitude'], df_p3['Latitude'], color='red', alpha=0.8, transform=proj_data)
 
         # G-III flight
-        g3_fname = os.path.join(self.flight_nav_dir, dt_str_ymd, g3_metnav_fnames[dt_str_ymd])
+        g3_fname = os.path.join(self.flight_nav_dir, sat_dt_str_ymd, g3_metnav_fnames[sat_dt_str_ymd])
         if not os.path.isfile(g3_fname): # if g3 file exists, read it otherwise skip processing
             return
 
