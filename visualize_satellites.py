@@ -167,7 +167,7 @@ def get_modis_viirs_geo_cld_opt(fdir):
 
 
 
-def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, start_dt, end_dt, quicklook_fdir, mode):
+def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, flight_nav_dir, start_dt, end_dt, quicklook_fdir, mode):
 
     f03, fcld_l2 = get_modis_viirs_geo_cld_opt(fdir)
     if (len(f03) == 0) or (len(fcld_l2) == 0):
@@ -277,6 +277,7 @@ def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, bu
                                 norway_ship=norway_ship,
                                 odin_ship=odin_ship,
                                 quicklook_fdir=quicklook_fdir,
+                                flight_nav_dir=flight_nav_dir,
                                 mode=mode) # initialize class object
 
             _ = arcsix_l2.plot_liquid_water_paths(lon_2d=lon2d_1km, lat_2d=lat2d_1km, ctp=ctp, cwp=cwp_2d, cwp_1621=cwp_1621)
@@ -294,6 +295,18 @@ def save_to_file_modis_viirs_geo_cld_opt(fdir, outdir, extent, geojson_fpath, bu
             continue
 
     return report
+
+
+def filter_files_by_date(fnames, start_dt, end_dt):
+    filtered_fnames = []
+    filtered_idxs = []
+    for i, f in enumerate(fnames):
+        if not within_range(f, start_dt, end_dt):
+            continue
+        filtered_fnames.append(f)
+        filtered_idxs.append(i)
+
+    return filtered_idxs, filtered_fnames
 
 
 def get_modis_viirs_ref_geo(fdir):
@@ -635,7 +648,7 @@ def process_fdir(fdir, args):
             )
             if ret_l1:
                 all_ret_l1.extend(ret_l1)
-
+# fdir, outdir, extent, geojson_fpath, buoys, norway_ship, odin_ship, start_dt, end_dt, quicklook_fdir, mode
             ret_l2 = save_to_file_modis_viirs_geo_cld_opt(
                 fdir, outdir, extent,
                 geojson_fpath=args.geojson,
@@ -645,6 +658,7 @@ def process_fdir(fdir, args):
                 quicklook_fdir=args.quicklook_fdir,
                 norway_ship=None,
                 odin_ship=None,
+                flight_nav_dir=args.flight_nav_fdir,
                 mode=args.mode
             )
             if ret_l2:

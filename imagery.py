@@ -912,9 +912,10 @@ class Imagery:
 
         #     spine.set_linewidth(1.5)
 
-    def plot_flights(self, ax, proj_data):
+    def plot_flights_documentary(self, ax, proj_data):
         """
         Add flight paths (P-3 in red and G-III in blue) to a cartopy map plot for current flight.
+        This is intended for the documentary visualizations.
 
         Args:
             ax: A matplotlib or cartopy axes object where the flight paths will be drawn.
@@ -973,6 +974,112 @@ class Imagery:
             # no need to plot future flights
 
         return ax
+
+
+    def plot_flights(self, ax, proj_data, dt=30):
+        """
+        Add flight paths (P-3 in red and G-III in blue) to a cartopy map plot for current flight.
+
+        Args:
+            ax: A matplotlib or cartopy axes object where the flight paths will be drawn.
+            proj_data: The projection used for the data.
+
+        Returns:
+            None
+        """
+        if proj_data is None:
+            proj_data = ccrs.PlateCarree()
+
+        ########### plot flight paths ###########
+
+        # satellite date
+        dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
+        dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
+        dt = dt.replace(hour=0, minute=0, second=0) # convert to date object and remove hours minutes seconds
+        dt_str_ymd = dt.strftime("%Y%m%d")
+
+        # P-3 flight
+        p3_fname = os.path.join(self.flight_nav_dir, dt_str_ymd, p3_metnav_fnames[dt_str_ymd])
+        if not os.path.isfile(p3_fname): # if p3 file exists, read it otherwise skip processing
+            return
+
+        df_p3 = pd.read_csv(p3_fname)
+        ax.plot(df_p3['Longitude'], df_p3['Latitude'], color='red', alpha=0.8, transform=proj_data)
+
+        # G-III flight
+        g3_fname = os.path.join(self.flight_nav_dir, dt_str_ymd, g3_metnav_fnames[dt_str_ymd])
+        if not os.path.isfile(g3_fname): # if g3 file exists, read it otherwise skip processing
+            return
+
+        df_g3 = pd.read_csv(g3_fname)
+        ax.plot(df_g3['Longitude'], df_g3['Latitude'], color='blue', alpha=0.8, transform=proj_data)
+
+        # add time text
+        # convert ns to s
+        seconds = list(np.array((np.diff(df_p3['datetime'])/1e9), dtype='int'))
+        seconds.insert(0, 0) # to help with indexing and make array same size as df
+
+        # convert to minutes
+        mins = np.cumsum(seconds)/60.
+
+        # indices we want
+        dt_idx = np.where(mins % dt == 0.)[0]
+
+        for i in dt_idx:
+            plon, plat = df_p3['Longitude'].iloc[i], df_p3['Latitude'].iloc[i]
+            time_text = df_p3['datetime'].iloc[i].strftime('%H:%M')
+
+            # if (plon >= view_extent[0]) and (plon <= view_extent[1]) and (plat >= view_extent[2]) and (plat <= view_extent[3]):
+            ax.text(plon, plat,
+                    time_text,
+                    ha="center", va="center",
+                    transform=ccrs.Geodetic(),
+                    fontweight="bold", fontsize=10, zorder=3)
+
+
+    def add_flight_legends(self, ax, dt_str_ymd, dt):
+        """
+        Add flight path legends to the plot based on available flight data.
+
+        Args:
+            ax: Matplotlib axes object
+            dt_str_ymd: Date string in YYYYMMDD format
+            dt: Datetime object for the current date
+        """
+        legend_handles = []
+        legend_labels = []
+
+        # Check which flights are available for this date
+        p3_available = dt_str_ymd in p3_metnav_fnames.keys()
+        g3_available = dt_str_ymd in g3_metnav_fnames.keys()
+
+        if p3_available and g3_available:
+            # Both flights flew on this day
+            legend_handles = [
+                matplotlib.lines.Line2D([0], [0], color='red'),
+                matplotlib.lines.Line2D([0], [0], color='blue'),
+            ]
+            legend_labels = [
+                'NASA P-3 Science Flight on {}'.format(dt.strftime('%d %B, %Y')),
+                'NASA G-III Science Flight on {}'.format(dt.strftime('%d %B, %Y'))
+            ]
+        elif p3_available:
+            # P-3 only flight
+            legend_handles = [matplotlib.lines.Line2D([0], [0], color='red')]
+            legend_labels = ['NASA P-3 Science Flight on {}'.format(dt.strftime('%d %B, %Y'))]
+        elif g3_available:
+            # G-III only flight
+            legend_handles = [matplotlib.lines.Line2D([0], [0], color='blue')]
+            legend_labels = ['NASA G-III Science Flight on {}'.format(dt.strftime('%d %B, %Y'))]
+
+        # Add legend if there are flight paths to show
+        if legend_handles:
+            leg0 = ax.legend(handles=legend_handles, labels=legend_labels,
+                            loc='lower left', bbox_to_anchor=(0, 0),
+                            facecolor='none', fancybox=False, shadow=False,
+                            frameon=True, prop={'size': 12}, edgecolor='black',
+                            borderaxespad=0)
+            leg0.get_frame().set_linewidth(1.5)
 
 
     def convert_ir_ctp(self, ctp_ir_arr):
@@ -1072,6 +1179,15 @@ class Imagery:
         title = "{} ({}) False Color (7-2-1) - ".format(self.instrument, self.satellite) + dt_title
         self.add_ancillary(ax, title=title)
 
+        ################# plot flight paths #################
+        if self.flight_nav_dir is not None:
+            dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
+            dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
+            dt_str_ymd = dt.strftime("%Y%m%d")
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.add_flight_legends(ax, dt_str_ymd, dt)
+        ################# end plot flight paths #################
+
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
@@ -1160,6 +1276,15 @@ class Imagery:
         title = "{} ({}) False Color (3-6-7) - ".format(self.instrument, self.satellite) + dt_title
         self.add_ancillary(ax, title=title)
 
+        ################# plot flight paths #################
+        if self.flight_nav_dir is not None:
+            dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
+            dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
+            dt_str_ymd = dt.strftime("%Y%m%d")
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.add_flight_legends(ax, dt_str_ymd, dt)
+        ################# end plot flight paths #################
+
         # view_extent = [lonmin - 2.5, lonmin + 2.5, latmin - 0.5, min(latmax + 0.5, 89)]
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
@@ -1240,56 +1365,15 @@ class Imagery:
                                   land_shapefile_path=land_shp_fpath,
                                   ocean_shapefile_path=ocean_shp_path,
                                   title=title, scale=1.3)
-        if self.flight_nav_dir is not None: # plot flight paths
+
+        ################# plot flight paths #################
+        if self.flight_nav_dir is not None:
             dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
             dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
             dt_str_ymd = dt.strftime("%Y%m%d")
-            self.plot_flights(ax, proj_data=util.plot_util.proj_data)
-
-            # if both flights flew on this day, add legend labels for both
-            if dt_str_ymd in p3_metnav_fnames.keys() and dt_str_ymd in g3_metnav_fnames.keys():
-                # Create custom legend handles
-                legend_handles = [
-                    # P-3
-                    matplotlib.lines.Line2D([0], [0], color='red'),
-                    # G-III
-                    matplotlib.lines.Line2D([0], [0], color='blue'),
-                ]
-
-                # Legend labels
-                legend_labels = ['NASA P-3 Science Flight on {}'.format(dt.strftime('%d %B, %Y')), 'NASA G-III Science Flight on {}'.format(dt.strftime('%d %B, %Y'))]
-
-            # P-3 only flight
-            elif dt_str_ymd in p3_metnav_fnames.keys() and dt_str_ymd not in g3_metnav_fnames.keys():
-                # Create custom legend handles
-                legend_handles = [
-                    # P-3
-                    matplotlib.lines.Line2D([0], [0], color='red'),
-                ]
-
-                # Legend labels
-                legend_labels = ['NASA P-3 Science Flight on {}'.format(dt.strftime('%d %B, %Y'))]
-
-            # G-III only flight
-            elif dt_str_ymd not in p3_metnav_fnames.keys() and dt_str_ymd in g3_metnav_fnames.keys():
-                # Create custom legend handles
-                legend_handles = [
-                    # G-III
-                    matplotlib.lines.Line2D([0], [0], color='blue'),
-                ]
-
-                # Legend labels
-                legend_labels = ['NASA G-III Science Flight on {}'.format(dt.strftime('%d %B, %Y'))]
-
-            else:
-                # No flights on this day
-                legend_handles = []
-                legend_labels = []
-
-            if len(legend_handles) > 0:
-                # Create the legend
-                leg0 = ax.legend(handles=legend_handles, labels=legend_labels, loc='lower left', bbox_to_anchor=(0, 0), facecolor='none', fancybox=False, shadow=False, frameon=True, prop={'size': 12}, edgecolor='black', borderaxespad=0)
-                leg0.get_frame().set_linewidth(1.5)
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.add_flight_legends(ax, dt_str_ymd, dt)
+        ################# end plot flight paths #################
 
 
         full_fname = "{}/{}_{}.png".format(save_dir, fname_target, sat_fname)
@@ -1387,6 +1471,16 @@ class Imagery:
             title = "{} ({}) False Color (1.38-1.61-2.25$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
 
         self.add_ancillary(ax, title=title)
+
+        ################# plot flight paths #################
+        if self.flight_nav_dir is not None:
+            dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
+            dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
+            dt_str_ymd = dt.strftime("%Y%m%d")
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.add_flight_legends(ax, dt_str_ymd, dt)
+        ################# end plot flight paths #################
+
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
@@ -1477,6 +1571,16 @@ class Imagery:
             title = "{} ({}) False Color (10.76-1.61-2.25$\;\mu m$) - ".format(self.instrument, self.satellite) + dt_title
 
         self.add_ancillary(ax, title=title)
+
+        ################# plot flight paths #################
+        if self.flight_nav_dir is not None:
+            dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
+            dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
+            dt_str_ymd = dt.strftime("%Y%m%d")
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.add_flight_legends(ax, dt_str_ymd, dt)
+        ################# end plot flight paths #################
+
         ax.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
         metadata = self.create_metadata()
         fig.savefig(full_fname, dpi=100, pad_inches=0.15, bbox_inches="tight", metadata=metadata)
@@ -1916,7 +2020,7 @@ class Imagery:
                             cmap=util.plot_util.ctp_swir_cmap,
                             transform=util.plot_util.proj_data)
         # ax00.set_boundary(boundary, transform=proj_data)
-        title = "{} ({}) Cloud Phase (SWIR/COP) - ".format(self.instrument, self.satellite) + dt_title
+        title = "{} ({}) Cloud Phase (SWIR) - ".format(self.instrument, self.satellite) + dt_title
         self.add_ancillary(ax00, title=title, scale=1.4)
         ax00.set_extent(util.plot_util.ccrs_views[self.mode]['view_extent'], util.plot_util.proj_data)
 
