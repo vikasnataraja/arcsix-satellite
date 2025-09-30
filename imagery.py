@@ -1185,7 +1185,7 @@ class Imagery:
             dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
             dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
             dt_str_ymd = dt.strftime("%Y%m%d")
-            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, delta_t=30)
             self.add_flight_legends(ax, dt_str_ymd, dt)
         ################# end plot flight paths #################
 
@@ -1282,7 +1282,7 @@ class Imagery:
             dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
             dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
             dt_str_ymd = dt.strftime("%Y%m%d")
-            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, delta_t=30)
             self.add_flight_legends(ax, dt_str_ymd, dt)
         ################# end plot flight paths #################
 
@@ -1372,7 +1372,7 @@ class Imagery:
             dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
             dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
             dt_str_ymd = dt.strftime("%Y%m%d")
-            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, delta_t=30)
             self.add_flight_legends(ax, dt_str_ymd, dt)
         ################# end plot flight paths #################
 
@@ -1478,7 +1478,7 @@ class Imagery:
             dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
             dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
             dt_str_ymd = dt.strftime("%Y%m%d")
-            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, delta_t=30)
             self.add_flight_legends(ax, dt_str_ymd, dt)
         ################# end plot flight paths #################
 
@@ -1578,7 +1578,7 @@ class Imagery:
             dt_str_ymd_hhmmz = self.format_acq_dt(self.acq_dt)
             dt = datetime.datetime.strptime(dt_str_ymd_hhmmz, "%Y-%m-%d-%H%MZ")
             dt_str_ymd = dt.strftime("%Y%m%d")
-            self.plot_flights(ax, proj_data=util.plot_util.proj_data, dt=30)
+            self.plot_flights(ax, proj_data=util.plot_util.proj_data, delta_t=30)
             self.add_flight_legends(ax, dt_str_ymd, dt)
         ################# end plot flight paths #################
 
