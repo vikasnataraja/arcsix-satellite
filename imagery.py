@@ -1004,7 +1004,7 @@ class Imagery:
             return
 
         df_p3 = pd.read_csv(p3_fname)
-        ax.plot(df_p3['Longitude'], df_p3['Latitude'], color='red', alpha=0.8, transform=proj_data)
+        ax.plot(df_p3['Longitude'], df_p3['Latitude'], color='red', alpha=0.8, linewidth=0.5, transform=proj_data)
 
         # G-III flight
         g3_fname = os.path.join(self.flight_nav_dir, sat_dt_str_ymd, g3_metnav_fnames[sat_dt_str_ymd])
@@ -1012,7 +1012,7 @@ class Imagery:
             return
 
         df_g3 = pd.read_csv(g3_fname)
-        ax.plot(df_g3['Longitude'], df_g3['Latitude'], color='blue', alpha=0.8, transform=proj_data)
+        ax.plot(df_g3['Longitude'], df_g3['Latitude'], color='blue', alpha=0.8, linewidth=0.5, transform=proj_data)
 
         # add time text
         # convert ns to s
@@ -1035,7 +1035,7 @@ class Imagery:
                     time_text,
                     ha="center", va="center",
                     transform=ccrs.Geodetic(),
-                    fontweight="bold", fontsize=10, zorder=3)
+                    fontweight="bold", fontsize=5, zorder=3)
 
 
     def add_flight_legends(self, ax, dt_str_ymd, dt):
