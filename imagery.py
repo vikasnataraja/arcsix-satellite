@@ -1295,7 +1295,7 @@ class Imagery:
 
         # if self.quicklook_fdir is not None: # generate quicklook imagery
 
-    def create_true_color_imagery(self, lon_2d, lat_2d, red, green, blue, sza, proj_plot=ccrs.PlateCarree(), use_fast_render=False):
+    def create_true_color_imagery(self, lon_2d, lat_2d, red, green, blue, sza, proj_plot=ccrs.PlateCarree(), use_fast_render=True):
         """
         Creates true color imagery from the given bands.
 
